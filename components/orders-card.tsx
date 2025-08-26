@@ -56,7 +56,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => cancelOrder(order.uniqueId, order.maker)}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </Button>

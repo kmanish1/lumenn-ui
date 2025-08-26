@@ -590,7 +590,7 @@ export default function App() {
                   setInputAmount(outputAmount);
                   setOutputAmount(tempAmount);
                 }}
-                className="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition"
+                className="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition cursor-pointer"
               >
                 <ArrowUpDown className="h-5 w-5 text-white" />
               </button>
@@ -598,7 +598,7 @@ export default function App() {
 
             {/* Buying */}
             <div className="bg-slate-800/30 rounded-lg p-4">
-              <Label className="text-slate-300">Buying</Label>
+              <Label className="text-slate-300 ">Buying</Label>
               <div className="flex items-center justify-between mt-2">
                 <TokenSearchBox
                   selectedToken={outputToken}
@@ -654,7 +654,7 @@ export default function App() {
             {/* Submit */}
             <Button
               onClick={handleSubmitOrder}
-              className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg"
+              className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg cursor-pointer"
             >
               {connected ? "Place Limit Order" : "Connect Wallet to Trade"}
             </Button>

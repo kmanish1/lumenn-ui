@@ -34,13 +34,13 @@ export function TokenSearchBox({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1 bg-slate-700 text-white rounded hover:bg-slate-600">
+        <button className="flex items-center gap-2 px-3 py-1 bg-slate-700 text-white rounded hover:bg-slate-600 cursor-pointer">
           {selectedToken ? (
             <>
               <img
                 src={selectedToken.icon}
                 alt={selectedToken.symbol}
-                className="w-5 h-5 rounded-full"
+                className="w-5 h-5 rounded-full "
               />
               {selectedToken.symbol}
             </>
