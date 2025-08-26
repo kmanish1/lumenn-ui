@@ -315,8 +315,9 @@ export default function App() {
     try {
       const signature = await sendTransaction(tx, connection);
 
-      toast.loading("Transaction sent. Waiting for confirmation...", {
+      toast.loading("Signed Transaction", {
         id: loadingToast,
+        description: `Waiting for confirmation...`,
         action: {
           label: "Explorer",
           onClick: () =>
@@ -347,6 +348,29 @@ export default function App() {
             ),
         },
       });
+      const new_order: Order = {
+        maker: publicKey,
+        uniqueId: unique_id,
+        tokens: {
+          inputMint: new PublicKey(inputToken.id),
+          outputMint: new PublicKey(outputToken.id),
+          inputTokenProgram: new PublicKey(inputToken.tokenProgram),
+          outputTokenProgram: new PublicKey(outputToken.tokenProgram),
+        },
+        amount: {
+          oriMakingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
+          takingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
+          oriTakingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
+          makingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
+        },
+        expiredAt: new BN(123141242141),
+        createdAt: new BN(Date.now()),
+        updatedAt: new BN(Date.now()),
+        slippageBps: 50,
+        feeBps: 5,
+      };
+
+      setOrders((prev) => [new_order, ...prev]);
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {
@@ -356,30 +380,6 @@ export default function App() {
           : String(err),
       });
     }
-
-    const new_order: Order = {
-      maker: publicKey,
-      uniqueId: unique_id,
-      tokens: {
-        inputMint: new PublicKey(inputToken.id),
-        outputMint: new PublicKey(outputToken.id),
-        inputTokenProgram: new PublicKey(inputToken.tokenProgram),
-        outputTokenProgram: new PublicKey(outputToken.tokenProgram),
-      },
-      amount: {
-        oriMakingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
-        takingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
-        oriTakingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
-        makingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
-      },
-      expiredAt: new BN(123141242141),
-      createdAt: new BN(Date.now()),
-      updatedAt: new BN(Date.now()),
-      slippageBps: 50,
-      feeBps: 5,
-    };
-
-    setOrders((prev) => [new_order, ...prev]);
   };
 
   const cancelOrder = async (unique_id: BN, maker: PublicKey) => {
@@ -497,8 +497,9 @@ export default function App() {
     try {
       const signature = await sendTransaction(tx, connection);
 
-      toast.loading("Transaction sent. Waiting for confirmation...", {
+      toast.loading("Signed Transaction", {
         id: loadingToast,
+        description: `Waiting for confirmation...`,
         action: {
           label: "Explorer",
           onClick: () =>
@@ -529,6 +530,8 @@ export default function App() {
             ),
         },
       });
+
+      setOrders((prev) => prev.filter((order) => order.uniqueId !== unique_id));
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {
@@ -538,8 +541,6 @@ export default function App() {
           : String(err),
       });
     }
-
-    setOrders((prev) => prev.filter((order) => order.uniqueId !== unique_id));
   };
 
   // const getStatusColor = (status: string) => {
