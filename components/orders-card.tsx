@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PublicKey } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
+import { rpc } from "@/app/program";
+
+interface Token {
+  id: string; // mint address
+  name: string;
+  symbol: string;
+  icon?: string;
+  decimals: number;
+  tokenProgram: string;
+}
 
 type OrdersCardProps = {
   orders: Order[];
@@ -14,83 +25,181 @@ type OrdersCardProps = {
 
 export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5; // number of orders per page
-
+  const [tokens, setTokens] = useState<Record<string, Token>>({});
+  const pageSize = 5;
   const totalPages = Math.ceil(orders.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const currentOrders = orders.slice(startIndex, startIndex + pageSize);
 
-  return (
-    <Card className="cyber-border cyber-glow w-full max-w-3xl">
-      <CardHeader>
-        <CardTitle>Your Orders</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <h3 className="font-semibold">Open Orders</h3>
+  useEffect(() => {
+    const uniqueMints = Array.from(
+      new Set(
+        orders.flatMap((o) => [
+          o.tokens.inputMint.toString(),
+          o.tokens.outputMint.toString(),
+        ]),
+      ),
+    );
 
-          {orders.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              No open orders
-            </div>
-          ) : (
-            <>
-              {currentOrders.map((order, i) => (
+    if (uniqueMints.length === 0) return;
+
+    const queryParams = uniqueMints.map((id) => `id=${id}`).join("&");
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/tokens?${queryParams}`);
+        const data: (Token | null)[] = await res.json();
+
+        const map: Record<string, Token> = {};
+        for (let i = 0; i < uniqueMints.length; i++) {
+          const mint = uniqueMints[i];
+          const token = data[i];
+
+          if (token) {
+            map[mint] = token;
+          } else {
+            // fallback to RPC
+            try {
+              const pubkey = new PublicKey(mint);
+              const info = await rpc.getParsedAccountInfo(pubkey);
+
+              const decimals =
+                info.value?.data &&
+                "parsed" in info.value.data &&
+                info.value.data.parsed.info.decimals
+                  ? info.value.data.parsed.info.decimals
+                  : 0;
+
+              map[mint] = {
+                id: mint,
+                name: "Unknown Token",
+                symbol: mint.slice(0, 4) + "…" + mint.slice(-4),
+                decimals,
+                tokenProgram: info.value?.owner?.toBase58() ?? "",
+              };
+            } catch (err) {
+              console.error("RPC fallback failed for mint:", mint, err);
+            }
+          }
+        }
+        setTokens(map);
+      } catch (err) {
+        console.error("Failed to fetch tokens:", err);
+      }
+    })();
+  }, [orders]);
+
+  const copyToClipboard = (mint: string) => {
+    navigator.clipboard.writeText(mint);
+  };
+
+  const formatAmount = (raw: BN, mint: string) => {
+    const t = tokens[mint];
+    if (!t) return raw.toString();
+    return (raw.toNumber() / Math.pow(10, t.decimals)).toLocaleString("en-US", {
+      maximumFractionDigits: t.decimals > 6 ? 6 : t.decimals,
+    });
+  };
+
+  return (
+    <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
+      <CardHeader className="border-b border-slate-700/50 pb-4">
+        <CardTitle className="text-xl font-semibold text-slate-200">
+          Your Orders
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+        <h3 className="text-lg font-medium text-slate-300">Open Orders</h3>
+        {orders.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 italic">
+            No open orders
+          </div>
+        ) : (
+          <>
+            {currentOrders.map((order, i) => {
+              const inputMint = order.tokens.inputMint.toString();
+              const outputMint = order.tokens.outputMint.toString();
+              const inputToken = tokens[inputMint];
+              const outputToken = tokens[outputMint];
+
+              return (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg cyber-border"
+                  className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors"
                 >
-                  <div className="flex-1">
-                    <div className="text-sm text-muted-foreground">
-                      {order.amount.makingAmount.toNumber()}{" "}
-                      {order.tokens.inputMint.toString()} →{" "}
-                      {order.amount.takingAmount.toNumber()}{" "}
-                      {order.tokens.outputMint.toString()}
+                  <div className="flex-1 space-y-1">
+                    <div className="text-sm text-slate-200 font-medium">
+                      {formatAmount(order.amount.makingAmount, inputMint)}{" "}
+                      <span
+                        className="text-indigo-400 cursor-pointer"
+                        onClick={() => copyToClipboard(inputMint)}
+                        title={`Click to copy mint: ${inputMint}`}
+                      >
+                        {inputToken?.symbol ?? inputMint.slice(0, 6) + "..."}
+                      </span>{" "}
+                      → {formatAmount(order.amount.takingAmount, outputMint)}{" "}
+                      <span
+                        className="text-green-400 cursor-pointer"
+                        onClick={() => copyToClipboard(outputMint)}
+                        title={`Click to copy mint: ${outputMint}`}
+                      >
+                        {outputToken?.symbol ?? outputMint.slice(0, 6) + "..."}
+                      </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Created At: {order.createdAt.toNumber()} | Expires:{" "}
-                      {order.expiredAt.toNumber()}
+                    <div className="text-xs text-slate-500">
+                      Created: {formatDate(order.createdAt)} | Expires:{" "}
+                      {formatDate(order.expiredAt)}
                     </div>
                   </div>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => cancelOrder(order.uniqueId, order.maker)}
-                    className="text-destructive hover:text-destructive cursor-pointer"
+                    className="text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              ))}
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+              );
+            })}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-6 pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-slate-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   );
 }
+
+const formatDate = (bn: BN) => {
+  return new Date(bn.toNumber() * 1000).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
