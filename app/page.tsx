@@ -80,14 +80,6 @@ export default function App() {
   const program = useProgram();
 
   const [inputToken, setInputToken] = useState<Token>({
-    icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-    id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    name: "USDC",
-    symbol: "USDC",
-    decimals: 6,
-    tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-  });
-  const [outputToken, setOutputToken] = useState<Token>({
     icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     id: "So11111111111111111111111111111111111111112",
     name: "Solana",
@@ -95,8 +87,16 @@ export default function App() {
     decimals: 9,
     tokenProgram: TOKEN_PROGRAM_ID.toString(),
   });
+  const [outputToken, setOutputToken] = useState<Token>({
+    icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    name: "USDC",
+    symbol: "USDC",
+    decimals: 6,
+    tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  });
 
-  const [inputAmount, setInputAmount] = useState(5.0);
+  const [inputAmount, setInputAmount] = useState(1.0);
   const [outputAmount, setOutputAmount] = useState(0.0);
 
   useEffect(() => {
