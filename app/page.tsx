@@ -74,7 +74,7 @@ export default function App() {
     name: "USDC",
     symbol: "USDC",
     decimals: 6,
-    token_program: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
   });
   const [outputToken, setOutputToken] = useState<Token>({
     icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
@@ -82,7 +82,7 @@ export default function App() {
     name: "Solana",
     symbol: "SOL",
     decimals: 9,
-    token_program: TOKEN_PROGRAM_ID.toString(),
+    tokenProgram: TOKEN_PROGRAM_ID.toString(),
   });
 
   const [inputAmount, setInputAmount] = useState(5.0);
@@ -93,10 +93,10 @@ export default function App() {
       const data = await fetch_quote(
         inputToken,
         outputToken,
-        inputAmount * 10 ** inputToken.decimals
+        inputAmount * 10 ** inputToken.decimals,
       );
       setOutputAmount(
-        data!.outAmount ? data!.outAmount / 10 ** outputToken.decimals : 0
+        data!.outAmount ? data!.outAmount / 10 ** outputToken.decimals : 0,
       );
       setTargetRate(data?.current_ratio);
     }
@@ -125,7 +125,7 @@ export default function App() {
             name: "Solana",
             symbol: "SOL",
             decimals: 9,
-            token_program: TOKEN_PROGRAM_ID.toString(),
+            tokenProgram: TOKEN_PROGRAM_ID.toString(),
           },
           {
             icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
@@ -133,7 +133,7 @@ export default function App() {
             name: "USDC",
             symbol: "USDC",
             decimals: 6,
-            token_program: TOKEN_PROGRAM_ID.toString(),
+            tokenProgram: TOKEN_PROGRAM_ID.toString(),
           },
           {
             icon: "https://raw.githubusercontent.com/ZeusNetworkHQ/zbtc-metadata/refs/heads/main/lgoo-v2.png",
@@ -141,7 +141,7 @@ export default function App() {
             name: "zBTC",
             symbol: "zBTC",
             decimals: 9,
-            token_program: TOKEN_PROGRAM_ID.toString(),
+            tokenProgram: TOKEN_PROGRAM_ID.toString(),
           },
           {
             icon: "https://static.jup.ag/jup/icon.png",
@@ -149,7 +149,7 @@ export default function App() {
             name: "Solana",
             symbol: "Jupiter",
             decimals: 6,
-            token_program: TOKEN_PROGRAM_ID.toString(),
+            tokenProgram: TOKEN_PROGRAM_ID.toString(),
           },
         ]);
         return;
@@ -192,9 +192,30 @@ export default function App() {
 
     const validityProof = proof.compressedProof;
 
-    console.log(expiry);
-
     if (!program || !validityProof) return;
+
+    const protocol_vault = PublicKey.findProgramAddressSync(
+      [Buffer.from("protocol_vault")],
+      program.programId,
+    );
+
+    const input_mint = new PublicKey(
+      "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
+    );
+    // NOTE: change this in mainnet
+    // const input_mint = new PublicKey(inputToken.id);
+    const protocol_vault_ata = await getAssociatedTokenAddress(
+      input_mint,
+      protocol_vault[0],
+      true,
+    );
+
+    const maker_input_ata = await getAssociatedTokenAddress(
+      input_mint,
+      publicKey,
+    );
+
+    console.log(maker_input_ata.toString());
 
     const instruction = await program.methods
       .initializeOrder(
@@ -219,17 +240,21 @@ export default function App() {
             rootIndex: proof.rootIndices[0],
           },
           outputStateTreeIndex: 1,
-        }
+        },
       )
-      .accounts({
+      .accountsPartial({
         payer: publicKey,
         maker: publicKey,
-        inputMint: new PublicKey("9stjYtrbCfYShqHuesfXk5od2V9P6Q7cs2eWdjQjyGJ"),
-        outputMint: new PublicKey(
-          "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+        makerInputMintAta: maker_input_ata,
+        inputMint: new PublicKey(
+          "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
         ),
-        inputTokenProgram: inputToken.token_program,
-        outputTokenProgram: outputToken.token_program,
+        protocolVaultInputMintAta: protocol_vault_ata,
+        outputMint: new PublicKey(
+          "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+        ),
+        inputTokenProgram: inputToken.tokenProgram,
+        outputTokenProgram: outputToken.tokenProgram,
       })
       .remainingAccounts(INIT_REMAINING_ACCOUNTS)
       .instruction();
@@ -244,8 +269,8 @@ export default function App() {
           publicKey,
           ata,
           publicKey,
-          sol_mint
-        )
+          sol_mint,
+        ),
       );
 
       instructions.push(
@@ -253,7 +278,7 @@ export default function App() {
           fromPubkey: publicKey,
           toPubkey: ata,
           lamports: inputAmount * LAMPORTS_PER_SOL,
-        })
+        }),
       );
 
       instructions.push(createSyncNativeInstruction(ata));
@@ -261,7 +286,7 @@ export default function App() {
       instructions.push(instruction);
 
       instructions.push(
-        createCloseAccountInstruction(ata, publicKey, publicKey)
+        createCloseAccountInstruction(ata, publicKey, publicKey),
       );
     } else {
       instructions.push(instruction);
@@ -317,7 +342,7 @@ export default function App() {
     const address = deriveAddress(assetSeed, ADDRESS_TREE);
 
     const compressed_account = await rpc.getCompressedAccount(
-      bn(address.toBytes())
+      bn(address.toBytes()),
     );
 
     if (!compressed_account) return;
@@ -326,7 +351,7 @@ export default function App() {
 
     const proof = await rpc.getValidityProofV0(
       [{ hash, tree: ADDRESS_TREE, queue: ADDRESS_QUEUE }],
-      []
+      [],
     );
     const validityProof = proof.compressedProof;
 

@@ -15,7 +15,8 @@ export async function GET() {
     symbol: "USDC",
     decimals: 6,
   };
-  const data = await fetch_quote(sol, usdc, 200_000_000);
+  const data = await search_tokens("JUP");
+  // const data = await fetch_quote(sol, usdc, 200_000_000);
   console.log(data);
   return new Response("Hello, world!");
 }

@@ -4,15 +4,15 @@ export type Token = {
   symbol: string;
   icon: string;
   decimals: number;
-  token_program: string;
+  tokenProgram: string;
 };
 
 export async function search_tokens(query: string): Promise<Token[]> {
   try {
     const response = await fetch(
       `https://lite-api.jup.ag/tokens/v2/search?query=${encodeURIComponent(
-        query
-      )}`
+        query,
+      )}`,
     );
 
     if (!response.ok) {
@@ -27,7 +27,7 @@ export async function search_tokens(query: string): Promise<Token[]> {
       symbol: t.symbol,
       icon: t.icon,
       decimals: t.decimals,
-      token_program: t.token_program,
+      tokenProgram: t.tokenProgram,
     }));
 
     return tokens;
@@ -40,11 +40,11 @@ export async function search_tokens(query: string): Promise<Token[]> {
 export async function fetch_quote(
   inputMint: Token,
   outputMint: Token,
-  amount: number
+  amount: number,
 ) {
   try {
     const response = await fetch(
-      `https://lite-api.jup.ag/swap/v1/quote?inputMint=${inputMint.id}&outputMint=${outputMint.id}&amount=${amount}`
+      `https://lite-api.jup.ag/swap/v1/quote?inputMint=${inputMint.id}&outputMint=${outputMint.id}&amount=${amount}`,
     );
 
     if (!response.ok) {
