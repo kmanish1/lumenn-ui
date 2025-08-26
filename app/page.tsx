@@ -54,7 +54,17 @@ import OrdersCard from "@/components/orders-card";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 export default function App() {
-  const { connected, publicKey, sendTransaction } = useWallet();
+  const { connected, publicKey, sendTransaction, connecting, disconnecting } =
+    useWallet();
+
+  useEffect(() => {
+    if (connected && !disconnecting) {
+      toast.success("Wallet connected", {
+        description: `Connected to ${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}`,
+      });
+    }
+  }, [connecting, disconnecting, connected, publicKey]);
+
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
@@ -301,20 +311,22 @@ export default function App() {
 
     const tx = new VersionedTransaction(message);
 
-    const signature = await sendTransaction(tx, connection);
-
-    toast("Transaction sent", {
-      description: "Waiting for confirmation...",
-      action: {
-        label: "Explorer",
-        onClick: () =>
-          window.open(
-            `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-            "_blank",
-          ),
-      },
-    });
+    const loadingToast = toast.loading("Sign the Transaction");
     try {
+      const signature = await sendTransaction(tx, connection);
+
+      toast.loading("Transaction sent. Waiting for confirmation...", {
+        id: loadingToast,
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+
       await connection.confirmTransaction(
         {
           signature: signature,
@@ -325,6 +337,7 @@ export default function App() {
 
       toast.success("Transaction confirmed ✅", {
         description: "Your transaction was finalized.",
+        id: loadingToast,
         action: {
           label: "Explorer",
           onClick: () =>
@@ -337,31 +350,12 @@ export default function App() {
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {
-        description: String(err),
+        id: loadingToast,
+        description: String(err).includes("Closed")
+          ? "Wallet Signing Failed"
+          : String(err),
       });
     }
-
-    //
-    // const newOrder: Order = {
-    //   id: Date.now().toString(),
-    //   type: "buy",
-    //   inputToken,
-    //   outputToken,
-    //   inputAmount,
-    //   outputAmount,
-    //   price: (
-    //     Number.parseFloat(outputAmount) / Number.parseFloat(inputAmount)
-    //   ).toFixed(2),
-    //   expiry,
-    //   status: "pending",
-    //   timestamp: new Date().toLocaleString(),
-    // };
-    //
-    // setOrders([newOrder, ...orders]);
-
-    // Reset form
-    setInputAmount(5);
-    setOutputAmount(0);
   };
 
   const cancelOrder = async (unique_id: BN, maker: PublicKey) => {
@@ -474,20 +468,23 @@ export default function App() {
       ],
     }).compileToV0Message();
     const tx = new VersionedTransaction(message);
-    const signature = await sendTransaction(tx, connection);
 
-    toast("Transaction sent", {
-      description: "Waiting for confirmation...",
-      action: {
-        label: "Explorer",
-        onClick: () =>
-          window.open(
-            `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-            "_blank",
-          ),
-      },
-    });
+    const loadingToast = toast.loading("Sign the Transaction");
     try {
+      const signature = await sendTransaction(tx, connection);
+
+      toast.loading("Transaction sent. Waiting for confirmation...", {
+        id: loadingToast,
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+
       await connection.confirmTransaction(
         {
           signature: signature,
@@ -498,6 +495,7 @@ export default function App() {
 
       toast.success("Transaction confirmed ✅", {
         description: "Your transaction was finalized.",
+        id: loadingToast,
         action: {
           label: "Explorer",
           onClick: () =>
@@ -510,7 +508,10 @@ export default function App() {
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {
-        description: String(err),
+        id: loadingToast,
+        description: String(err).includes("Closed")
+          ? "Wallet Signing Failed"
+          : String(err),
       });
     }
   };

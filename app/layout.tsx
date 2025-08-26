@@ -30,7 +30,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
-        <Toaster position="bottom-left" />
+        <Toaster
+          position="bottom-left"
+          toastOptions={{
+            classNames: {
+              toast:
+                "p-4 rounded-xl text-base shadow-lg border border-slate-700 bg-slate-900 text-white",
+              title: "text-lg font-semibold",
+              description: "text-sm text-slate-300",
+              actionButton: "bg-slate-700 text-white px-3 py-1 rounded-lg",
+            },
+          }}
+        />
       </body>
     </html>
   );
