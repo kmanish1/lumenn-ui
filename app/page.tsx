@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "sonner";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createCloseAccountInstruction,
@@ -199,11 +200,11 @@ export default function App() {
       program.programId,
     );
 
-    const input_mint = new PublicKey(
-      "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
-    );
+    // const input_mint = new PublicKey(
+    //   "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
+    // );
     // NOTE: change this in mainnet
-    // const input_mint = new PublicKey(inputToken.id);
+    const input_mint = new PublicKey(inputToken.id);
     const protocol_vault_ata = await getAssociatedTokenAddress(
       input_mint,
       protocol_vault[0],
@@ -214,8 +215,6 @@ export default function App() {
       input_mint,
       publicKey,
     );
-
-    console.log(maker_input_ata.toString());
 
     const instruction = await program.methods
       .initializeOrder(
@@ -246,9 +245,7 @@ export default function App() {
         payer: publicKey,
         maker: publicKey,
         makerInputMintAta: maker_input_ata,
-        inputMint: new PublicKey(
-          "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
-        ),
+        inputMint: input_mint,
         protocolVaultInputMintAta: protocol_vault_ata,
         outputMint: new PublicKey(
           "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
@@ -304,7 +301,45 @@ export default function App() {
 
     const tx = new VersionedTransaction(message);
 
-    await sendTransaction(tx, connection);
+    const signature = await sendTransaction(tx, connection);
+
+    toast("Transaction sent", {
+      description: "Waiting for confirmation...",
+      action: {
+        label: "Explorer",
+        onClick: () =>
+          window.open(
+            `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+            "_blank",
+          ),
+      },
+    });
+    try {
+      await connection.confirmTransaction(
+        {
+          signature: signature,
+          ...(await connection.getLatestBlockhash()),
+        },
+        "confirmed",
+      );
+
+      toast.success("Transaction confirmed ✅", {
+        description: "Your transaction was finalized.",
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Transaction failed ❌", {
+        description: String(err),
+      });
+    }
 
     //
     // const newOrder: Order = {
@@ -405,18 +440,79 @@ export default function App() {
 
     const latestBlockhash = await rpc.getLatestBlockhash();
 
-    // TODO: handle wsol
+    const instructions = [];
+    const sol_mint = new PublicKey(
+      "So11111111111111111111111111111111111111112",
+    );
+    if (escrow_data.tokens.inputMint.equals(sol_mint)) {
+      const ata = await getAssociatedTokenAddress(sol_mint, publicKey);
+
+      instructions.push(
+        createAssociatedTokenAccountIdempotentInstruction(
+          publicKey,
+          ata,
+          publicKey,
+          sol_mint,
+        ),
+      );
+
+      instructions.push(instruction);
+
+      instructions.push(
+        createCloseAccountInstruction(ata, publicKey, publicKey),
+      );
+    } else {
+      instructions.push(instruction);
+    }
 
     const message = new TransactionMessage({
       payerKey: publicKey,
       recentBlockhash: latestBlockhash.blockhash,
       instructions: [
         ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
-        instruction,
+        ...instructions,
       ],
     }).compileToV0Message();
     const tx = new VersionedTransaction(message);
-    await sendTransaction(tx, connection);
+    const signature = await sendTransaction(tx, connection);
+
+    toast("Transaction sent", {
+      description: "Waiting for confirmation...",
+      action: {
+        label: "Explorer",
+        onClick: () =>
+          window.open(
+            `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+            "_blank",
+          ),
+      },
+    });
+    try {
+      await connection.confirmTransaction(
+        {
+          signature: signature,
+          ...(await connection.getLatestBlockhash()),
+        },
+        "confirmed",
+      );
+
+      toast.success("Transaction confirmed ✅", {
+        description: "Your transaction was finalized.",
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Transaction failed ❌", {
+        description: String(err),
+      });
+    }
   };
 
   // const getStatusColor = (status: string) => {
