@@ -1,11 +1,5 @@
 "use client";
 import { toast } from "sonner";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createCloseAccountInstruction,
-  createSyncNativeInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
@@ -20,33 +14,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TrendingUp, ArrowUpDown } from "lucide-react";
-import { connection, rpc } from "@/lib/rpc";
-
-import { ADDRESS_TREE, getOpenOrders, PROGRAM_ID, useProgram } from "./program";
-import { Order, parseOrderFromBuffer, randomU64 } from "@/lib/utils";
+import { connection } from "@/lib/rpc";
+import { Order } from "@/lib/utils";
 import BN from "bn.js";
-import {
-  ComputeBudgetProgram,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  SystemProgram,
-  TransactionMessage,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import {
-  bn,
-  deriveAddress,
-  deriveAddressSeed,
-} from "@lightprotocol/stateless.js";
-import {
-  ADDRESS_QUEUE,
-  CLOSE_ACCOUNTS,
-  INIT_REMAINING_ACCOUNTS,
-} from "@/lib/address";
+import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { fetch_quote, search_tokens, Token } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
 import OrdersCard from "@/components/orders-card";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { getOpenOrders } from "@/lib/orders";
 
 export default function App() {
   const { connected, publicKey, sendTransaction, connecting, disconnecting } =
@@ -72,24 +48,27 @@ export default function App() {
     fetchOrders();
   }, [connected, publicKey]);
 
-  const program = useProgram();
-
-  const [inputToken, setInputToken] = useState<Token>({
+  const sol = {
     icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     id: "So11111111111111111111111111111111111111112",
     name: "Solana",
     symbol: "SOL",
     decimals: 9,
     tokenProgram: TOKEN_PROGRAM_ID.toString(),
-  });
-  const [outputToken, setOutputToken] = useState<Token>({
+  };
+
+  const usdc = {
     icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
     id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     name: "USDC",
     symbol: "USDC",
     decimals: 6,
     tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-  });
+  };
+
+  const [inputToken, setInputToken] = useState<Token>(sol);
+
+  const [outputToken, setOutputToken] = useState<Token>(usdc);
 
   const [inputAmount, setInputAmount] = useState(1.0);
   const [outputAmount, setOutputAmount] = useState(0.0);
@@ -125,22 +104,8 @@ export default function App() {
       // if connected then show the tokens in his wallet
       if (searchQuery.length < 2) {
         setSearchResults([
-          {
-            icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-            id: "So11111111111111111111111111111111111111112",
-            name: "Solana",
-            symbol: "SOL",
-            decimals: 9,
-            tokenProgram: TOKEN_PROGRAM_ID.toString(),
-          },
-          {
-            icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-            id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-            name: "USDC",
-            symbol: "USDC",
-            decimals: 6,
-            tokenProgram: TOKEN_PROGRAM_ID.toString(),
-          },
+          sol,
+          usdc,
           {
             icon: "https://raw.githubusercontent.com/ZeusNetworkHQ/zbtc-metadata/refs/heads/main/lgoo-v2.png",
             id: "zBTCug3er3tLyffELcvDNrKkCymbPWysGcWihESYfLg",
@@ -326,21 +291,6 @@ export default function App() {
     }
   };
 
-  // const getStatusColor = (status: string) => {
-  //   switch (status) {
-  //     case "pending":
-  //       return "bg-secondary text-secondary-foreground";
-  //     case "filled":
-  //       return "bg-primary text-primary-foreground";
-  //     case "expired":
-  //       return "bg-muted text-muted-foreground";
-  //     case "cancelled":
-  //       return "bg-destructive text-destructive-foreground";
-  //     default:
-  //       return "bg-muted text-muted-foreground";
-  //   }
-  // };
-
   return (
     <div className="min-h-screen bg-background cyber-grid">
       <header className="border-b border-border cyber-border">
@@ -363,14 +313,11 @@ export default function App() {
       </header>
 
       <div className="container mx-auto px-4 py-8 flex flex-col items-center gap-8">
-        {/* Limit Orders Section */}
-
         <Card className="cyber-border cyber-glow bg-slate-900/50 w-full max-w-lg">
           <CardHeader>
             <CardTitle className="text-center">Limit Orders</CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            {/* Selling */}
             <div className="bg-slate-800/30 rounded-lg p-4">
               <Label className="text-slate-300">Selling</Label>
               <div className="flex items-center justify-between mt-2">
@@ -407,7 +354,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Buying */}
             <div className="bg-slate-800/30 rounded-lg p-4">
               <Label className="text-slate-300 ">Buying</Label>
               <div className="flex items-center justify-between mt-2">
@@ -425,9 +371,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Target Rate + Expiry Row */}
             <div className="flex items-center justify-between bg-slate-800/30 rounded-lg p-4">
-              {/* Target Rate */}
               <div>
                 <Label className="text-slate-300 text-sm">Target Rate</Label>
                 <div className="flex items-center gap-2 mt-1">
@@ -443,8 +387,6 @@ export default function App() {
                   </span>
                 </div>
               </div>
-
-              {/* Expiry */}
               <div>
                 <Label className="text-slate-300 text-sm">Expiry</Label>
                 <Select value={expiry} onValueChange={setExpiry}>
@@ -461,8 +403,6 @@ export default function App() {
                 </Select>
               </div>
             </div>
-
-            {/* Submit */}
             <Button
               onClick={handleSubmitOrder}
               className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg cursor-pointer"
@@ -471,41 +411,7 @@ export default function App() {
             </Button>
           </CardContent>
         </Card>
-
         <OrdersCard orders={orders} cancelOrder={cancelOrder} />
-
-        {/* Orders Section */}
-        {/* Order History */}
-        {/* <div className="space-y-4 mt-8"> */}
-        {/*   <h3 className="font-semibold">Order History</h3> */}
-        {/*   {orders.filter((o) => o.status !== "pending").length === 0 ? ( */}
-        {/*     <div className="text-center py-4 text-muted-foreground"> */}
-        {/*       No order history */}
-        {/*     </div> */}
-        {/*   ) : ( */}
-        {/*     orders */}
-        {/*       .filter((o) => o.status !== "pending") */}
-        {/*       .map((order) => ( */}
-        {/*         <div */}
-        {/*           key={order.id} */}
-        {/*           className="flex items-center justify-between p-4 border border-border rounded-lg cyber-border" */}
-        {/*         > */}
-        {/*           <div className="flex-1"> */}
-        {/*             <Badge className={getStatusColor(order.status)}> */}
-        {/*               {order.status.toUpperCase()} */}
-        {/*             </Badge> */}
-        {/*             <div className="text-sm text-muted-foreground"> */}
-        {/*               {order.inputAmount} {order.inputToken} →{" "} */}
-        {/*               {order.outputAmount} {order.outputToken} */}
-        {/*             </div> */}
-        {/*             <div className="text-xs text-muted-foreground"> */}
-        {/*               Price: {order.price} | Completed: {order.timestamp} */}
-        {/*             </div> */}
-        {/*           </div> */}
-        {/*         </div> */}
-        {/*       )) */}
-        {/*   )} */}
-        {/* </div> */}
       </div>
     </div>
   );
