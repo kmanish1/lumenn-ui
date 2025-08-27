@@ -20,14 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TrendingUp, ArrowUpDown } from "lucide-react";
-import {
-  ADDRESS_TREE,
-  connection,
-  getOpenOrders,
-  PROGRAM_ID,
-  rpc,
-  useProgram,
-} from "./program";
+import { connection, rpc } from "@/lib/rpc";
+
+import { ADDRESS_TREE, getOpenOrders, PROGRAM_ID, useProgram } from "./program";
 import { Order, parseOrderFromBuffer, randomU64 } from "@/lib/utils";
 import BN from "bn.js";
 import {
@@ -182,138 +177,24 @@ export default function App() {
     )
       return;
 
-    const unique_id = new BN(randomU64());
-
-    const seeds: Uint8Array[] = [
-      Buffer.from("escrow"),
-      unique_id.toArrayLike(Buffer, "le", 8),
-      publicKey.toBuffer(),
-    ];
-
-    const assetSeed = deriveAddressSeed(seeds, program!.programId);
-    const address = deriveAddress(assetSeed, ADDRESS_TREE);
-
-    const proof = await rpc.getValidityProofV0(undefined, [
-      {
-        address: bn(address.toBytes()),
-        tree: ADDRESS_TREE,
-        queue: ADDRESS_QUEUE,
-      },
-    ]);
-
-    const validityProof = proof.compressedProof;
-
-    if (!program || !validityProof) return;
-
-    const protocol_vault = PublicKey.findProgramAddressSync(
-      [Buffer.from("protocol_vault")],
-      program.programId,
-    );
-
-    // const input_mint = new PublicKey(
-    //   "J7LM6p22Ef8VhREZzkLToSADrXhAiiQUn3P2BAwo1RSe",
-    // );
-    // NOTE: change this in mainnet
-    const input_mint = new PublicKey(inputToken.id);
-    const protocol_vault_ata = await getAssociatedTokenAddress(
-      input_mint,
-      protocol_vault[0],
-      true,
-    );
-
-    const maker_input_ata = await getAssociatedTokenAddress(
-      input_mint,
-      publicKey,
-    );
-
-    const instruction = await program.methods
-      .initializeOrder(
-        {
-          uniqueId: unique_id,
-          makingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
-          takingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
-          expiredAt: new BN(123141242141),
-          slippageBps: 50,
-        },
-        {
-          proof: {
-            0: {
-              a: validityProof.a,
-              b: validityProof.b,
-              c: validityProof.c,
-            },
-          },
-          addressTreeInfo: {
-            addressMerkleTreePubkeyIndex: 0,
-            addressQueuePubkeyIndex: 2,
-            rootIndex: proof.rootIndices[0],
-          },
-          outputStateTreeIndex: 1,
-        },
-      )
-      .accountsPartial({
-        payer: publicKey,
-        maker: publicKey,
-        makerInputMintAta: maker_input_ata,
-        inputMint: input_mint,
-        protocolVaultInputMintAta: protocol_vault_ata,
-        outputMint: new PublicKey(
-          "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
-        ),
-        inputTokenProgram: inputToken.tokenProgram,
-        outputTokenProgram: outputToken.tokenProgram,
-      })
-      .remainingAccounts(INIT_REMAINING_ACCOUNTS)
-      .instruction();
-
-    const instructions = [];
-
-    if (inputToken.symbol === "SOL") {
-      const sol_mint = new PublicKey(inputToken.id);
-      const ata = await getAssociatedTokenAddress(sol_mint, publicKey);
-      instructions.push(
-        createAssociatedTokenAccountIdempotentInstruction(
-          publicKey,
-          ata,
-          publicKey,
-          sol_mint,
-        ),
-      );
-
-      instructions.push(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: ata,
-          lamports: inputAmount * LAMPORTS_PER_SOL,
-        }),
-      );
-
-      instructions.push(createSyncNativeInstruction(ata));
-
-      instructions.push(instruction);
-
-      instructions.push(
-        createCloseAccountInstruction(ata, publicKey, publicKey),
-      );
-    } else {
-      instructions.push(instruction);
-    }
-
-    const latestBlockhash = await rpc.getLatestBlockhash();
-    const message = new TransactionMessage({
-      payerKey: publicKey,
-      recentBlockhash: latestBlockhash.blockhash,
-      instructions: [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
-        ...instructions,
-      ],
-    }).compileToV0Message();
-
-    const tx = new VersionedTransaction(message);
-
     const loadingToast = toast.loading("Sign the Transaction");
     try {
-      const signature = await sendTransaction(tx, connection);
+      const res = await fetch(
+        `/api/instructions/init` +
+          `?maker=${publicKey.toString()}` +
+          `&input_mint=${inputToken.id}` +
+          `&input_amount=${inputAmount * 10 ** inputToken.decimals}` +
+          `&output_mint=${outputToken.id}` +
+          `&output_amount=${outputAmount * 10 ** outputToken.decimals}`,
+      );
+
+      const { tx, unique_id } = await res.json();
+
+      const txBuffer = Buffer.from(tx, "base64");
+
+      const transaction = VersionedTransaction.deserialize(txBuffer);
+
+      const signature = await sendTransaction(transaction, connection);
 
       toast.loading("Signed Transaction", {
         id: loadingToast,
@@ -348,6 +229,7 @@ export default function App() {
             ),
         },
       });
+
       const new_order: Order = {
         maker: publicKey,
         uniqueId: unique_id,
@@ -383,119 +265,20 @@ export default function App() {
   };
 
   const cancelOrder = async (unique_id: BN, maker: PublicKey) => {
-    if (!program) return;
-    if (!connected || !publicKey) return;
-    const seeds: Uint8Array[] = [
-      Buffer.from("escrow"),
-      unique_id.toArrayLike(Buffer, "le", 8),
-      maker.toBuffer(),
-    ];
-
-    const assetSeed = deriveAddressSeed(seeds, PROGRAM_ID);
-    const address = deriveAddress(assetSeed, ADDRESS_TREE);
-
-    const compressed_account = await rpc.getCompressedAccount(
-      bn(address.toBytes()),
-    );
-
-    if (!compressed_account) return;
-
-    const hash = compressed_account!.hash;
-
-    const proof = await rpc.getValidityProofV0(
-      [{ hash, tree: ADDRESS_TREE, queue: ADDRESS_QUEUE }],
-      [],
-    );
-    const validityProof = proof.compressedProof;
-
-    if (!validityProof) return;
-
-    const buffer = compressed_account?.data?.data;
-    const escrow_data = parseOrderFromBuffer(buffer!);
-
-    const instruction = await program.methods
-      .cancelOrder({
-        escrowAccount: {
-          uniqueId: escrow_data.uniqueId,
-          amount: {
-            makingAmount: escrow_data.amount.makingAmount,
-            takingAmount: escrow_data.amount.takingAmount,
-            oriMakingAmount: escrow_data.amount.oriMakingAmount,
-            oriTakingAmount: escrow_data.amount.oriTakingAmount,
-          },
-          expiredAt: escrow_data.expiredAt,
-          slippageBps: escrow_data.slippageBps,
-          feeBps: escrow_data.feeBps,
-          createdAt: escrow_data.createdAt,
-          updatedAt: escrow_data.updatedAt,
-        },
-        proof: {
-          0: {
-            a: validityProof.a,
-            b: validityProof.b,
-            c: validityProof.c,
-          },
-        },
-        treeInfo: {
-          rootIndex: proof.rootIndices[0],
-          merkleTreePubkeyIndex: 0,
-          queuePubkeyIndex: 1,
-          proveByIndex: false,
-          leafIndex: compressed_account.leafIndex,
-        },
-        outputStateTreeIndex: 0,
-      })
-      .accounts({
-        payer: publicKey,
-        maker: publicKey,
-        inputMint: escrow_data.tokens.inputMint,
-        outputMint: escrow_data.tokens.outputMint,
-        inputTokenProgram: escrow_data.tokens.inputTokenProgram,
-        outputTokenProgram: escrow_data.tokens.outputTokenProgram,
-      })
-      .remainingAccounts(CLOSE_ACCOUNTS)
-      .instruction();
-
-    const latestBlockhash = await rpc.getLatestBlockhash();
-
-    const instructions = [];
-    const sol_mint = new PublicKey(
-      "So11111111111111111111111111111111111111112",
-    );
-    if (escrow_data.tokens.inputMint.equals(sol_mint)) {
-      const ata = await getAssociatedTokenAddress(sol_mint, publicKey);
-
-      instructions.push(
-        createAssociatedTokenAccountIdempotentInstruction(
-          publicKey,
-          ata,
-          publicKey,
-          sol_mint,
-        ),
-      );
-
-      instructions.push(instruction);
-
-      instructions.push(
-        createCloseAccountInstruction(ata, publicKey, publicKey),
-      );
-    } else {
-      instructions.push(instruction);
-    }
-
-    const message = new TransactionMessage({
-      payerKey: publicKey,
-      recentBlockhash: latestBlockhash.blockhash,
-      instructions: [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
-        ...instructions,
-      ],
-    }).compileToV0Message();
-    const tx = new VersionedTransaction(message);
-
     const loadingToast = toast.loading("Sign the Transaction");
+
     try {
-      const signature = await sendTransaction(tx, connection);
+      const res = await fetch(
+        `/api/instructions/cancel?id=${unique_id}&maker=${maker.toString()}`,
+      );
+
+      const { tx } = await res.json();
+
+      const txBuffer = Buffer.from(tx, "base64");
+
+      const transaction = VersionedTransaction.deserialize(txBuffer);
+
+      const signature = await sendTransaction(transaction, connection);
 
       toast.loading("Signed Transaction", {
         id: loadingToast,

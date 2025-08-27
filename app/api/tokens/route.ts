@@ -11,7 +11,10 @@ interface Token {
 }
 
 const tokens: Token[] = tokensData;
-const tokenMap: Map<string, Token> = new Map(tokens.map((t) => [t.id, t]));
+
+export const tokenMap: Map<string, Token> = new Map(
+  tokens.map((t) => [t.id, t]),
+);
 
 export async function GET(req: Request) {
   try {
