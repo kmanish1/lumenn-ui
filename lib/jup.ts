@@ -52,10 +52,19 @@ export async function fetch_quote(
     }
 
     const data = await response.json();
-    const current_ratio =
-      data.outAmount /
-      10 ** outputMint.decimals /
-      (data.inAmount / 10 ** inputMint.decimals);
+    let current_ratio;
+
+    if (inputMint.name.includes("USD")) {
+      current_ratio =
+        data.inAmount /
+        10 ** inputMint.decimals /
+        (data.outAmount / 10 ** outputMint.decimals);
+    } else {
+      current_ratio =
+        data.outAmount /
+        10 ** outputMint.decimals /
+        (data.inAmount / 10 ** inputMint.decimals);
+    }
     return {
       outAmount: data.outAmount,
       current_ratio,

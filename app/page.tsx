@@ -49,7 +49,6 @@ export default function App() {
   }, [connected, publicKey]);
 
   const [inputToken, setInputToken] = useState<Token>(sol);
-
   const [outputToken, setOutputToken] = useState<Token>(usdc);
 
   const [inputAmount, setInputAmount] = useState(1.0);
@@ -68,7 +67,7 @@ export default function App() {
       setTargetRate(data?.current_ratio);
     }
     fetchOutputAmount();
-  }, [inputAmount, inputToken]);
+  }, [inputAmount, inputToken, outputToken]);
 
   const [targetRate, setTargetRate] = useState<number>();
 
@@ -403,7 +402,9 @@ export default function App() {
                     placeholder="e.g. 196.42"
                   />
                   <span className="text-slate-400 text-sm">
-                    {outputToken.name}
+                    {inputToken.name.includes("USD")
+                      ? inputToken.name
+                      : outputToken.name}
                   </span>
                 </div>
               </div>
