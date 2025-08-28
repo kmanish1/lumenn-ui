@@ -394,8 +394,6 @@ export default function App() {
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
-
-                {/* Only show if "custom" is selected */}
                 {mode === "custom" && (
                   <input
                     type="datetime-local"
