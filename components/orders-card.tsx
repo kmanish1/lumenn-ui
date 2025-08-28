@@ -155,9 +155,10 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                     variant="ghost"
                     size="icon"
                     onClick={() => cancelOrder(order.uniqueId, order.maker)}
-                    className="text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-full cursor-pointer"
+                    className="flex flex-col items-center justify-center gap-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
                   >
                     <X className="h-4 w-4" />
+                    <span className="text-xs font-medium">Cancel</span>
                   </Button>
                 </div>
               );
