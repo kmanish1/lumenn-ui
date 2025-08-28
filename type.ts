@@ -558,6 +558,271 @@ export type Elara = {
       ];
     },
     {
+      name: "expireWsolOrder";
+      docs: [
+        "when the input_mint is WSOL, to unwrap it back to sol, during cancel the wsol is transferrred to maker wsol ata",
+        "the maker ata can only be closed by the maker. so while expiring the order we can't unwrap",
+        "since the funds are stored in a protocol vault, and can't close it. So we will create a new",
+        "temporary ata owned the Program, transfer the wsol to that ata and close it with",
+        "destination = maker. this will unwrap the wsol back to SOL",
+        "friction less limit orders mf",
+      ];
+      discriminator: [28, 129, 80, 227, 153, 42, 11, 22];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "payerWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "payer";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "maker";
+          docs: [
+            "For expired orders, anyone can cancel (including workers/keepers)",
+          ];
+          writable: true;
+        },
+        {
+          name: "solMint";
+          address: "So11111111111111111111111111111111111111112";
+        },
+        {
+          name: "outputMint";
+        },
+        {
+          name: "protocolVault";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                ];
+              },
+            ];
+          };
+        },
+        {
+          name: "protocolVaultInputMintAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "protocolVault";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "tempAccount";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [116, 101, 109, 112, 95, 97, 99, 99, 111, 117, 110, 116];
+              },
+            ];
+          };
+        },
+        {
+          name: "tempWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "tempAccount";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "inputTokenProgram";
+        },
+        {
+          name: "outputTokenProgram";
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "associatedTokenProgram";
+          address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+        },
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: {
+              name: "cancelOrderParams";
+            };
+          };
+        },
+      ];
+    },
+    {
       name: "fillOrder";
       docs: [
         "fill the order when the price reaches the user target",
@@ -682,6 +947,263 @@ export type Elara = {
               {
                 kind: "account";
                 path: "outputMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "inputTokenProgram";
+        },
+        {
+          name: "outputTokenProgram";
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "associatedTokenProgram";
+          address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+        },
+        {
+          name: "jupiterProgram";
+        },
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: {
+              name: "fillOrderParams";
+            };
+          };
+        },
+      ];
+    },
+    {
+      name: "fillWsolOrder";
+      discriminator: [4];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "payerWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "payer";
+              },
+              {
+                kind: "account";
+                path: "outputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "maker";
+          writable: true;
+        },
+        {
+          name: "inputMint";
+        },
+        {
+          name: "solMint";
+          address: "So11111111111111111111111111111111111111112";
+        },
+        {
+          name: "protocolVault";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                ];
+              },
+            ];
+          };
+        },
+        {
+          name: "protocolVaultOutputMintAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "protocolVault";
+              },
+              {
+                kind: "account";
+                path: "outputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "tempAccount";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [116, 101, 109, 112, 95, 97, 99, 99, 111, 117, 110, 116];
+              },
+            ];
+          };
+        },
+        {
+          name: "tempWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "tempAccount";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
               },
             ];
             program: {
@@ -1257,8 +1779,326 @@ export type Elara = {
         },
       ];
     },
+    {
+      name: "partialFillWsol";
+      discriminator: [5];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "payerWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "payer";
+              },
+              {
+                kind: "account";
+                path: "outputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "maker";
+          writable: true;
+        },
+        {
+          name: "inputMint";
+        },
+        {
+          name: "solMint";
+          address: "So11111111111111111111111111111111111111112";
+        },
+        {
+          name: "makerOutputMintAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "maker";
+              },
+              {
+                kind: "account";
+                path: "outputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "protocolVault";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                ];
+              },
+            ];
+          };
+        },
+        {
+          name: "protocolVaultOutputMintAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "protocolVault";
+              },
+              {
+                kind: "account";
+                path: "outputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "tempAccount";
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [116, 101, 109, 112, 95, 97, 99, 99, 111, 117, 110, 116];
+              },
+            ];
+          };
+        },
+        {
+          name: "tempWsolAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "tempAccount";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "solMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
+        },
+        {
+          name: "inputTokenProgram";
+        },
+        {
+          name: "outputTokenProgram";
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "associatedTokenProgram";
+          address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+        },
+        {
+          name: "jupiterProgram";
+        },
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: {
+              name: "partialFillOrderParams";
+            };
+          };
+        },
+      ];
+    },
   ];
   events: [
+    {
+      name: "expireOrderEvent";
+      discriminator: [194, 106, 80, 205, 43, 150, 129, 169];
+    },
     {
       name: "fillOrderEvent";
       discriminator: [37, 51, 197, 130, 53, 15, 99, 18];
@@ -1421,6 +2261,11 @@ export type Elara = {
       code: 6028;
       name: "solAtaCreatedSeparately";
       msg: "Taking account SOL ata is created separately";
+    },
+    {
+      code: 6029;
+      name: "orderNotExpired";
+      msg: "Order not expired";
     },
   ];
   types: [
@@ -1715,6 +2560,46 @@ export type Elara = {
       };
     },
     {
+      name: "expireOrderEvent";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "escrowAccount";
+            type: "pubkey";
+          },
+          {
+            name: "maker";
+            type: "pubkey";
+          },
+          {
+            name: "inputMint";
+            type: "pubkey";
+          },
+          {
+            name: "outputMint";
+            type: "pubkey";
+          },
+          {
+            name: "uniqueId";
+            type: "u64";
+          },
+          {
+            name: "amount";
+            type: "u64";
+          },
+          {
+            name: "expiredAt";
+            type: "i64";
+          },
+          {
+            name: "closedAt";
+            type: "i64";
+          },
+        ];
+      };
+    },
+    {
       name: "fillOrderEvent";
       type: {
         kind: "struct";
@@ -1734,6 +2619,10 @@ export type Elara = {
           {
             name: "outputMint";
             type: "pubkey";
+          },
+          {
+            name: "uniqueId";
+            type: "u64";
           },
           {
             name: "inAmount";
