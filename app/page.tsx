@@ -18,7 +18,7 @@ import { connection, sol, usdc } from "@/lib/rpc";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { fetch_quote, Token } from "@/lib/jup";
+import { fetch_quote, get_current_rate, Token } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
 import OrdersCard from "@/components/orders-card";
 import { getOpenOrders } from "@/lib/orders";
@@ -83,6 +83,15 @@ export default function App() {
       !publicKey
     )
       return;
+
+    const current_rate = await get_current_rate(inputToken, outputToken);
+
+    if (current_rate) {
+      if (targetRate! < current_rate) {
+        toast.error("Target rate must be greater than current rate");
+        return;
+      }
+    }
 
     const loadingToast = toast.loading("creating the Transaction...");
     try {

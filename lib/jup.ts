@@ -67,3 +67,27 @@ export async function fetch_quote(
     return null;
   }
 }
+
+export async function get_current_rate(inputMint: Token, outputMint: Token) {
+  try {
+    const response = await fetch(
+      `https://lite-api.jup.ag/price/v3?ids=${inputMint.id},${outputMint.id}`,
+    );
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const inputPrice = data[inputMint.id]?.usdPrice;
+    const outputPrice = data[outputMint.id]?.usdPrice;
+
+    if (inputPrice && outputPrice) {
+      return inputPrice / outputPrice;
+    }
+
+    throw new Error("Price not found for one of the tokens");
+  } catch (err) {
+    console.error(err);
+  }
+}
