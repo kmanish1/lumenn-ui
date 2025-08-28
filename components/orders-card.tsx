@@ -131,11 +131,18 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                     <div className="text-sm text-slate-200 font-medium">
                       {formatAmount(order.amount.makingAmount, inputMint)}{" "}
                       <span
-                        className="text-indigo-400 cursor-pointer"
+                        className="text-indigo-400 cursor-pointer inline-flex items-center gap-1"
                         onClick={() => copyToClipboard(inputMint)}
                         title={`Click to copy mint: ${inputMint}`}
                       >
                         {inputToken?.symbol ?? inputMint.slice(0, 6) + "..."}
+                        {inputToken?.icon && (
+                          <img
+                            src={inputToken.icon}
+                            alt={inputToken.symbol}
+                            className="w-6 h-6 rounded-full"
+                          />
+                        )}
                       </span>{" "}
                       → {formatAmount(order.amount.takingAmount, outputMint)}{" "}
                       <span

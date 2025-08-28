@@ -175,8 +175,7 @@ export default function App() {
   };
 
   const cancelOrder = async (unique_id: BN, maker: PublicKey) => {
-    const loadingToast = toast.loading("Sign the Transaction");
-
+    const loadingToast = toast.loading("creating the Transaction...");
     try {
       const res = await fetch(
         `/api/instructions/cancel?id=${unique_id}&maker=${maker.toString()}`,
@@ -187,6 +186,8 @@ export default function App() {
       const txBuffer = Buffer.from(tx, "base64");
 
       const transaction = VersionedTransaction.deserialize(txBuffer);
+
+      toast.loading("Sign the Transaction", { id: loadingToast });
 
       const signature = await sendTransaction(transaction, connection);
 
