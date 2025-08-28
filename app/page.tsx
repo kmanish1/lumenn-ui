@@ -18,10 +18,9 @@ import { connection, sol, usdc } from "@/lib/rpc";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { fetch_quote, search_tokens, Token } from "@/lib/jup";
+import { fetch_quote, Token } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
 import OrdersCard from "@/components/orders-card";
-import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { getOpenOrders } from "@/lib/orders";
 
 export default function App() {
@@ -74,42 +73,6 @@ export default function App() {
   useEffect(() => {
     setOutputAmount(inputAmount * (targetRate || 0));
   }, [targetRate]);
-
-  const [searchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Token[]>([]);
-
-  useEffect(() => {
-    const fetchTokens = async () => {
-      // TODO: show this list when the wallet is not connected
-      // if connected then show the tokens in his wallet
-      if (searchQuery.length < 2) {
-        setSearchResults([
-          sol,
-          usdc,
-          {
-            icon: "https://raw.githubusercontent.com/ZeusNetworkHQ/zbtc-metadata/refs/heads/main/lgoo-v2.png",
-            id: "zBTCug3er3tLyffELcvDNrKkCymbPWysGcWihESYfLg",
-            name: "zBTC",
-            symbol: "zBTC",
-            decimals: 9,
-            tokenProgram: TOKEN_PROGRAM_ID.toString(),
-          },
-          {
-            icon: "https://static.jup.ag/jup/icon.png",
-            id: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-            name: "Solana",
-            symbol: "Jupiter",
-            decimals: 6,
-            tokenProgram: TOKEN_PROGRAM_ID.toString(),
-          },
-        ]);
-        return;
-      }
-      const tokens = await search_tokens(searchQuery);
-      setSearchResults(tokens);
-    };
-    fetchTokens();
-  }, [searchQuery]);
 
   const handleSubmitOrder = async () => {
     if (
@@ -402,9 +365,7 @@ export default function App() {
                     placeholder="e.g. 196.42"
                   />
                   <span className="text-slate-400 text-sm">
-                    {inputToken.name.includes("USD")
-                      ? inputToken.name
-                      : outputToken.name}
+                    {outputToken.name}
                   </span>
                 </div>
               </div>
