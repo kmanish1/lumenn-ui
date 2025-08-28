@@ -49,6 +49,8 @@ export async function GET(req: Request) {
       "output_amount",
     );
 
+    const expiredAt = Number(searchParams.get("expired_at"));
+
     if (!maker || !inputMint || !outputMint) {
       return NextResponse.json(
         { error: "Invalid parameters" },
@@ -109,7 +111,7 @@ export async function GET(req: Request) {
           uniqueId: unique_id,
           makingAmount: new BN(inputAmount),
           takingAmount: new BN(outputAmount),
-          expiredAt: new BN(123141242141),
+          expiredAt: expiredAt === 0 ? null : new BN(expiredAt),
           slippageBps: 50,
         },
         {

@@ -88,7 +88,6 @@ export default function App() {
     fetchOutputAmount();
   }, [inputAmount, inputToken]);
 
-  const [expiry, setExpiry] = useState("never");
   const [targetRate, setTargetRate] = useState<number>();
 
   useEffect(() => {
@@ -137,12 +136,11 @@ export default function App() {
       !outputToken ||
       !inputAmount ||
       !outputAmount ||
-      !expiry ||
       !publicKey
     )
       return;
 
-    const loadingToast = toast.loading("Sign the Transaction");
+    const loadingToast = toast.loading("creating the Transaction...");
     try {
       const res = await fetch(
         `/api/instructions/init` +
@@ -150,7 +148,8 @@ export default function App() {
           `&input_mint=${inputToken.id}` +
           `&input_amount=${inputAmount * 10 ** inputToken.decimals}` +
           `&output_mint=${outputToken.id}` +
-          `&output_amount=${outputAmount * 10 ** outputToken.decimals}`,
+          `&output_amount=${outputAmount * 10 ** outputToken.decimals}` +
+          `&expired_at=${expiry}`,
       );
 
       const { tx, unique_id } = await res.json();
@@ -158,6 +157,8 @@ export default function App() {
       const txBuffer = Buffer.from(tx, "base64");
 
       const transaction = VersionedTransaction.deserialize(txBuffer);
+
+      toast.loading("Sign the Transaction", { id: loadingToast });
 
       const signature = await sendTransaction(transaction, connection);
 
@@ -210,9 +211,9 @@ export default function App() {
           oriTakingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
           makingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
         },
-        expiredAt: new BN(123141242141),
-        createdAt: new BN(Date.now()),
-        updatedAt: new BN(Date.now()),
+        expiredAt: new BN(expiry),
+        createdAt: new BN(Date.now() / 1000),
+        updatedAt: new BN(Date.now() / 1000),
         slippageBps: 50,
         feeBps: 5,
       };
@@ -289,6 +290,43 @@ export default function App() {
           : String(err),
       });
     }
+  };
+
+  const [expiry, setExpiry] = useState<number>(0);
+  const [customDate, setCustomDate] = useState<string>("");
+  const [mode, setMode] = useState<string>("never");
+
+  const handleExpiryChange = (value: string) => {
+    const now = Math.floor(Date.now() / 1000);
+    setMode(value);
+
+    switch (value) {
+      case "never":
+        setExpiry(0);
+        break;
+      case "1h":
+        setExpiry(now + 3600);
+        break;
+      case "6h":
+        setExpiry(now + 6 * 3600);
+        break;
+      case "24h":
+        setExpiry(now + 24 * 3600);
+        break;
+      case "7d":
+        setExpiry(now + 7 * 24 * 3600);
+        break;
+      case "custom":
+        // wait for user to pick a date
+        setExpiry(0);
+        break;
+    }
+  };
+
+  const handleCustomDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = new Date(e.target.value);
+    setCustomDate(e.target.value);
+    setExpiry(Math.floor(date.getTime() / 1000));
   };
 
   return (
@@ -387,20 +425,31 @@ export default function App() {
                   </span>
                 </div>
               </div>
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label className="text-slate-300 text-sm">Expiry</Label>
-                <Select value={expiry} onValueChange={setExpiry}>
-                  <SelectTrigger className="border-none bg-transparent text-white p-0 h-auto w-24">
-                    <SelectValue />
+                <Select value={mode} onValueChange={handleExpiryChange}>
+                  <SelectTrigger className="border-b border-slate-500 bg-transparent text-white px-0 py-1 h-auto w-32 text-sm focus:outline-none">
+                    <SelectValue placeholder="Select expiry" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-slate-800 text-white border border-slate-700 shadow-md rounded-md">
                     <SelectItem value="never">Never</SelectItem>
                     <SelectItem value="1h">1 Hour</SelectItem>
                     <SelectItem value="6h">6 Hours</SelectItem>
                     <SelectItem value="24h">24 Hours</SelectItem>
                     <SelectItem value="7d">7 Days</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Only show if "custom" is selected */}
+                {mode === "custom" && (
+                  <input
+                    type="datetime-local"
+                    value={customDate}
+                    onChange={handleCustomDateChange}
+                    className="bg-transparent border-b border-slate-500 text-white text-sm focus:outline-none"
+                  />
+                )}
               </div>
             </div>
             <Button

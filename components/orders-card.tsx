@@ -148,7 +148,9 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                     </div>
                     <div className="text-xs text-slate-500">
                       Created: {formatDate(order.createdAt)} | Expires:{" "}
-                      {formatDate(order.expiredAt)}
+                      {order.expiredAt.eq(new BN(0))
+                        ? "never"
+                        : formatDate(order.expiredAt)}
                     </div>
                   </div>
                   <Button
