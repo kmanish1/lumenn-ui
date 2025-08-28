@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TrendingUp, ArrowUpDown } from "lucide-react";
-import { connection } from "@/lib/rpc";
+import { connection, sol, usdc } from "@/lib/rpc";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
@@ -47,24 +47,6 @@ export default function App() {
     }
     fetchOrders();
   }, [connected, publicKey]);
-
-  const sol = {
-    icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-    id: "So11111111111111111111111111111111111111112",
-    name: "Solana",
-    symbol: "SOL",
-    decimals: 9,
-    tokenProgram: TOKEN_PROGRAM_ID.toString(),
-  };
-
-  const usdc = {
-    icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-    id: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    name: "USDC",
-    symbol: "USDC",
-    decimals: 6,
-    tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-  };
 
   const [inputToken, setInputToken] = useState<Token>(sol);
 
