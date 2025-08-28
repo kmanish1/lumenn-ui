@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import { Order, parseOrderFromBuffer } from "@/lib/utils";
 import { rpc } from "@/lib/rpc";
-import { PROGRAM_ID } from "@/app/program";
+import { PROGRAM_ID } from "./address";
 
 export async function getOpenOrders(address: PublicKey): Promise<Order[]> {
   const data = await rpc.getCompressedAccountsByOwner(PROGRAM_ID, {

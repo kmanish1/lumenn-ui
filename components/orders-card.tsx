@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
-import { rpc } from "@/app/program";
+import { rpc } from "@/lib/rpc";
 
 interface Token {
   id: string; // mint address
