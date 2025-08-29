@@ -186,7 +186,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                   size="sm"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
                 >
                   Previous
                 </Button>
@@ -198,7 +198,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                   size="sm"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
                 >
                   Next
                 </Button>
