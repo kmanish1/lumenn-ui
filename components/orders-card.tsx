@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
   }, [orders]);
 
   const copyToClipboard = (mint: string) => {
+    toast.success("Mint address copied to clipboard");
     navigator.clipboard.writeText(mint);
   };
 

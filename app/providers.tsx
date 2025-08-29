@@ -1,5 +1,5 @@
 "use client";
-
+import { Analytics } from "@vercel/analytics/next";
 import { clusterApiUrl } from "@solana/web3.js";
 import { useMemo } from "react";
 import {
@@ -23,7 +23,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          {children}
+          <Analytics />
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
