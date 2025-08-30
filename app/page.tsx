@@ -321,6 +321,7 @@ export default function App() {
                 <TokenSearchBox
                   selectedToken={inputToken}
                   setSelectedToken={setInputToken}
+                  user={connected ? publicKey! : undefined}
                 />
                 <input
                   inputMode="decimal"
