@@ -93,6 +93,11 @@ export default function App() {
       }
     }
 
+    if (expiry != 0 && expiry < Math.floor(Date.now() / 1000)) {
+      toast.error("Expiry must be in the future");
+      return;
+    }
+
     const loadingToast = toast.loading("creating the Transaction...");
     try {
       const res = await fetch(
