@@ -37,12 +37,16 @@ async function get_wallet_tokens(address: PublicKey) {
 
   for (let i = 0; i < token.value.length; i++) {
     const data = AccountLayout.decode(token.value[i].account.data);
-    accounts.push({ mint: data.mint, amount: data.amount });
+    if (data.amount !== BigInt(0)) {
+      accounts.push({ mint: data.mint, amount: data.amount });
+    }
   }
 
   for (let i = 0; i < token_2022.value.length; i++) {
     const data = AccountLayout.decode(token_2022.value[i].account.data);
-    accounts.push({ mint: data.mint, amount: data.amount });
+    if (data.amount !== BigInt(0)) {
+      accounts.push({ mint: data.mint, amount: data.amount });
+    }
   }
 
   const sol_balance = await rpc.getBalance(address);
@@ -74,7 +78,12 @@ export function TokenSearchBox({
   useEffect(() => {
     const fetchTokens = async () => {
       if (query.length < 2) {
-        setResults(DEFAULT_TOKENS);
+        if (user && Object.keys(walletTokens).length > 0) {
+          const userTokens = Object.values(walletTokens).map((wt) => wt.token);
+          setResults(userTokens);
+        } else {
+          setResults(DEFAULT_TOKENS);
+        }
         return;
       }
       try {
@@ -86,46 +95,51 @@ export function TokenSearchBox({
       }
     };
     fetchTokens();
-  }, [query]);
+  }, [query, walletTokens, user]);
 
   useEffect(() => {
     async function fetch_tokens() {
-      const accounts = await get_wallet_tokens(user!);
+      if (!user) return;
+      try {
+        const accounts = await get_wallet_tokens(user);
 
-      const mints = accounts.map((t) => t.mint.toString());
-      const queryParams = mints.map((mint) => `id=${mint}`).join("&");
+        const mints = accounts.map((t) => t.mint.toString());
+        const queryParams = mints.map((mint) => `id=${mint}`).join("&");
 
-      const res = await fetch(`/api/tokens?${queryParams}`);
-      const data: (Token | null)[] = await res.json();
+        const res = await fetch(`/api/tokens?${queryParams}`);
+        const data: (Token | null)[] = await res.json();
 
-      const map: Record<string, { token: Token; amount: number }> = {};
+        const map: Record<string, { token: Token; amount: number }> = {};
 
-      for (let i = 0; i < mints.length; i++) {
-        const mint = mints[i];
-        const tokenMeta = data[i];
-        const amount = Number(accounts[i].amount); // raw u64 amount
+        for (let i = 0; i < mints.length; i++) {
+          const mint = mints[i];
+          const tokenMeta = data[i];
+          const amount = Number(accounts[i].amount); // raw u64 amount
 
-        if (tokenMeta) {
-          map[mint] = { token: tokenMeta, amount };
-        } else {
-          map[mint] = {
-            token: {
-              icon: "",
-              id: mint,
-              name: "",
-              symbol: mint.slice(0, 4) + "…" + mint.slice(-4),
-              decimals: 9,
-              tokenProgram: "",
-            },
-            amount,
-          };
+          if (tokenMeta) {
+            map[mint] = { token: tokenMeta, amount };
+          } else {
+            map[mint] = {
+              token: {
+                icon: "",
+                id: mint,
+                name: "",
+                symbol: mint.slice(0, 4) + "…" + mint.slice(-4),
+                decimals: 9,
+                tokenProgram: "",
+              },
+              amount,
+            };
+          }
         }
+        setWalletTokens(map);
+      } catch (error) {
+        console.error("Error fetching wallet tokens:", error);
+        setWalletTokens({});
       }
-      setWalletTokens(map);
     }
-    if (user) {
-      fetch_tokens();
-    }
+
+    fetch_tokens();
   }, [user]);
 
   const handleTokenSelect = (token: Token) => {
@@ -136,7 +150,13 @@ export function TokenSearchBox({
 
   const handleDialogClose = () => {
     setQuery(""); // Reset search when dialog closes
-    setResults(DEFAULT_TOKENS); // Reset to default tokens
+    // Reset to wallet tokens if user is connected, otherwise default tokens
+    if (user && Object.keys(walletTokens).length > 0) {
+      const userTokens = Object.values(walletTokens).map((wt) => wt.token);
+      setResults(userTokens);
+    } else {
+      setResults(DEFAULT_TOKENS);
+    }
   };
 
   return (
@@ -183,9 +203,11 @@ export function TokenSearchBox({
         <div className="max-h-72 overflow-y-auto space-y-1">
           {results.length > 0 ? (
             results.map((token) => {
-              const balance =
-                walletTokens[token.id]?.amount / 10 ** (token.decimals ?? 9) ||
-                0;
+              const walletToken = walletTokens[token.id];
+              const balance = walletToken
+                ? walletToken.amount / 10 ** (token.decimals ?? 9)
+                : 0;
+
               return (
                 <div
                   key={token.id}
@@ -205,9 +227,11 @@ export function TokenSearchBox({
                     <span className="text-sm font-medium">{token.symbol}</span>
                     <span className="text-xs text-slate-400">{token.name}</span>
                   </div>
-                  <div className="ml-auto text-sm text-slate-300">
-                    {balance.toFixed(4)}
-                  </div>
+                  {user && (
+                    <div className="ml-auto text-sm text-slate-300">
+                      {balance.toFixed(4)}
+                    </div>
+                  )}
                 </div>
               );
             })
