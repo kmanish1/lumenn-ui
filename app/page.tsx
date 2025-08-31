@@ -22,6 +22,8 @@ import { fetch_quote, get_current_rate, Token } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
 import OrdersCard from "@/components/orders-card";
 import { getOpenOrders } from "@/lib/orders";
+import HistoryCard from "@/components/history-card";
+import { History } from "./api/orders/history/route";
 
 export default function App() {
   const { connected, publicKey, sendTransaction, connecting, disconnecting } =
@@ -45,6 +47,22 @@ export default function App() {
       }
     }
     fetchOrders();
+  }, [connected, publicKey]);
+
+  const [history, setHistory] = useState<History[]>([]);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      if (connected) {
+        const res = await fetch(
+          `/api/orders/history?maker=${publicKey?.toString()}`,
+        );
+        const data = await res.json();
+        setHistory(data.history);
+      }
+    }
+
+    fetchHistory();
   }, [connected, publicKey]);
 
   const [inputToken, setInputToken] = useState<Token>(sol);
@@ -419,6 +437,7 @@ export default function App() {
           </CardContent>
         </Card>
         <OrdersCard orders={orders} cancelOrder={cancelOrder} />
+        <HistoryCard events={history} />
       </div>
     </div>
   );
