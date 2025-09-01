@@ -147,7 +147,7 @@ const FILL_EVENT_DISCRIMINATOR = Buffer.from([
 // --------------------
 // Decoders
 // --------------------
-export function decodeOrderInitialized(base64Data: string) {
+function decodeOrderInitialized(base64Data: string) {
   const buf = Buffer.from(base64Data, "base64");
   if (!buf.subarray(0, 8).equals(ORDER_INITIALIZED_DISCRIMINATOR)) return null;
 
@@ -179,7 +179,7 @@ export function decodeOrderInitialized(base64Data: string) {
   };
 }
 
-export function decodeOrderCancelled(base64Data: string) {
+function decodeOrderCancelled(base64Data: string) {
   const buf = Buffer.from(base64Data, "base64");
   if (!buf.subarray(0, 8).equals(ORDER_CANCELLED_DISCRIMINATOR)) return null;
 
@@ -218,7 +218,7 @@ export function decodeOrderCancelled(base64Data: string) {
   };
 }
 
-export function decodeFillEvent(base64Data: string) {
+function decodeFillEvent(base64Data: string) {
   const buf = Buffer.from(base64Data, "base64");
   if (!buf.subarray(0, 8).equals(FILL_EVENT_DISCRIMINATOR)) return null;
 
