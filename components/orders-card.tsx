@@ -1,5 +1,4 @@
 "use client";
-
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
@@ -9,8 +8,9 @@ import { X } from "lucide-react";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
 import { rpc } from "@/lib/rpc";
+import UpdateCard from "./update-card";
 
-interface Token {
+export interface Token {
   id: string; // mint address
   name: string;
   symbol: string;
@@ -18,6 +18,10 @@ interface Token {
   decimals: number;
   tokenProgram: string;
 }
+
+// TODO: price check, date check
+// on submit shouldn't close
+// reset button
 
 type OrdersCardProps = {
   orders: Order[];
@@ -103,113 +107,161 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
     });
   };
 
-  return (
-    <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
-      <CardHeader className="border-b border-slate-700/50 pb-4">
-        <CardTitle className="text-xl font-semibold text-slate-200">
-          Your Orders
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-6">
-        <h3 className="text-lg font-medium text-slate-300">Open Orders</h3>
-        {orders.length === 0 ? (
-          <div className="text-center py-8 text-slate-500 italic">
-            No open orders
-          </div>
-        ) : (
-          <>
-            {currentOrders.map((order, i) => {
-              const inputMint = order.tokens.inputMint.toString();
-              const outputMint = order.tokens.outputMint.toString();
-              const inputToken = tokens[inputMint];
-              const outputToken = tokens[outputMint];
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
-              return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors"
-                >
-                  <div className="flex-1 space-y-1">
-                    <div className="text-sm text-slate-200 font-medium">
-                      {formatAmount(order.amount.makingAmount, inputMint)}{" "}
-                      <span
-                        className="text-indigo-400 cursor-pointer inline-flex items-center gap-1"
-                        onClick={() => copyToClipboard(inputMint)}
-                        title={`Click to copy mint: ${inputMint}`}
-                      >
-                        {inputToken?.symbol ?? inputMint.slice(0, 6) + "..."}
-                        {inputToken?.icon && (
-                          <img
-                            src={inputToken.icon}
-                            alt={inputToken.symbol}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                      </span>{" "}
-                      → {formatAmount(order.amount.takingAmount, outputMint)}{" "}
-                      <span
-                        className="text-green-400 cursor-pointer inline-flex items-center gap-1"
-                        onClick={() => copyToClipboard(outputMint)}
-                        title={`Click to copy mint: ${outputMint}`}
-                      >
-                        {outputToken?.symbol ?? outputMint.slice(0, 6) + "..."}
-                        {outputToken?.icon && (
-                          <img
-                            src={outputToken.icon}
-                            alt={outputToken.symbol}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                      </span>
+  const openEdit = (order: Order) => {
+    setEditingOrder(order);
+    setIsUpdateDialogOpen(true);
+  };
+
+  const getOrderTokens = (order: Order | null) => {
+    if (!order) return { inputToken: null, outputToken: null };
+
+    const inputMint = order.tokens.inputMint.toString();
+    const outputMint = order.tokens.outputMint.toString();
+
+    return {
+      inputToken: tokens[inputMint] || null,
+      outputToken: tokens[outputMint] || null,
+    };
+  };
+
+  const { inputToken, outputToken } = getOrderTokens(editingOrder);
+
+  const closeUpdate = () => {
+    setEditingOrder(null);
+    setIsUpdateDialogOpen(false);
+  };
+
+  return (
+    <>
+      <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
+        <CardHeader className="border-b border-slate-700/50 pb-4">
+          <CardTitle className="text-xl font-semibold text-slate-200">
+            Your Orders
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          <h3 className="text-lg font-medium text-slate-300">Open Orders</h3>
+          {orders.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 italic">
+              No open orders
+            </div>
+          ) : (
+            <>
+              {currentOrders.map((order, i) => {
+                const inputMint = order.tokens.inputMint.toString();
+                const outputMint = order.tokens.outputMint.toString();
+                const inputToken = tokens[inputMint];
+                const outputToken = tokens[outputMint];
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="text-sm text-slate-200 font-medium">
+                        {formatAmount(order.amount.makingAmount, inputMint)}{" "}
+                        <span
+                          className="text-indigo-400 cursor-pointer inline-flex items-center gap-1"
+                          onClick={() => copyToClipboard(inputMint)}
+                          title={`Click to copy mint: ${inputMint}`}
+                        >
+                          {inputToken?.symbol ?? inputMint.slice(0, 6) + "..."}
+                          {inputToken?.icon && (
+                            <img
+                              src={inputToken.icon}
+                              alt={inputToken.symbol}
+                              className="w-6 h-6 rounded-full"
+                            />
+                          )}
+                        </span>{" "}
+                        → {formatAmount(order.amount.takingAmount, outputMint)}{" "}
+                        <span
+                          className="text-green-400 cursor-pointer inline-flex items-center gap-1"
+                          onClick={() => copyToClipboard(outputMint)}
+                          title={`Click to copy mint: ${outputMint}`}
+                        >
+                          {outputToken?.symbol ??
+                            outputMint.slice(0, 6) + "..."}
+                          {outputToken?.icon && (
+                            <img
+                              src={outputToken.icon}
+                              alt={outputToken.symbol}
+                              className="w-6 h-6 rounded-full"
+                            />
+                          )}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Created: {formatDate(order.createdAt)} | Expires:{" "}
+                        {order.expiredAt.eq(new BN(0))
+                          ? "never"
+                          : formatDate(order.expiredAt)}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500">
-                      Created: {formatDate(order.createdAt)} | Expires:{" "}
-                      {order.expiredAt.eq(new BN(0))
-                        ? "never"
-                        : formatDate(order.expiredAt)}
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(order)}
+                        className="text-blue-400 hover:text-blue-500 hover:bg-blue-500/10"
+                      >
+                        ✏️Update
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => cancelOrder(order.address, order.maker)}
+                        className="flex flex-col items-center justify-center gap-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="text-xs font-medium">Cancel</span>
+                      </Button>
                     </div>
                   </div>
+                );
+              })}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-6 pt-4">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => cancelOrder(order.address, order.maker)}
-                    className="flex flex-col items-center justify-center gap-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
                   >
-                    <X className="h-4 w-4" />
-                    <span className="text-xs font-medium">Cancel</span>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-slate-400">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  >
+                    Next
                   </Button>
                 </div>
-              );
-            })}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-6 pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-slate-400">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 cursor-pointer"
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <UpdateCard
+        order={editingOrder}
+        isOpen={isUpdateDialogOpen}
+        onClose={closeUpdate}
+        inputToken={inputToken!}
+        outputToken={outputToken!}
+      />
+    </>
   );
 }
 
