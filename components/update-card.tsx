@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-import { connection } from "@/lib/rpc";
+import { connection, usdc } from "@/lib/rpc";
 import { Order, toHumanReadable, toRawAmount } from "@/lib/utils";
 import { get_current_rate } from "@/lib/jup";
 import { useOrdersStore } from "@/store/useOrderStore";
@@ -96,7 +96,12 @@ export default function UpdateOrderDialog({
     const toastId = toast.loading("Preparing transaction...");
 
     try {
-      const currentRate = await get_current_rate(inputToken, outputToken);
+      const currentRate = await get_current_rate(
+        inputToken,
+        outputToken.id === "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+          ? usdc
+          : outputToken,
+      );
 
       if (currentRate && targetRate < currentRate) {
         toast.error("Target rate must be greater than current rate", {
@@ -179,6 +184,10 @@ export default function UpdateOrderDialog({
   };
 
   useEffect(() => {
+    sync_order_state();
+  }, [order, inputToken, outputToken]);
+
+  const sync_order_state = () => {
     if (!order) return;
 
     const normalizedInputAmount = toHumanReadable(
@@ -211,7 +220,7 @@ export default function UpdateOrderDialog({
       const expiryDate = new Date(order.expiredAt.toNumber() * 1000);
       setCustomDate(expiryDate.toISOString().slice(0, 16));
     }
-  }, [order, inputToken, outputToken]);
+  };
 
   const handleInputAmountChange = (value: number) => {
     if (isNaN(value) || value < 0) return;
@@ -360,6 +369,13 @@ export default function UpdateOrderDialog({
             disabled={inputAmount <= 0 || outputAmount <= 0 || targetRate <= 0}
           >
             Update Order
+          </Button>
+
+          <Button
+            onClick={sync_order_state}
+            className="w-full bg-red-600  transition-colors cursor-pointer"
+          >
+            Reset to Original State
           </Button>
         </div>
       </DialogContent>

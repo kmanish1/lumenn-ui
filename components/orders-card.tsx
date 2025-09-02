@@ -21,9 +21,6 @@ export interface Token {
   tokenProgram: string;
 }
 
-// TODO: price check
-// reset button
-
 export default function OrdersCard() {
   const { orders, removeOrder } = useOrdersStore();
   const { sendTransaction } = useWallet();

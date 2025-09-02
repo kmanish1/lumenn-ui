@@ -1,4 +1,4 @@
-import { search_tokens, Token } from "@/lib/jup";
+import { search_tokens } from "@/lib/jup";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { Token } from "./orders-card";
 
 const DEFAULT_TOKENS: Token[] = [sol, usdc, jup, zBTC];
 
