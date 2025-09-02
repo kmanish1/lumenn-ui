@@ -1,14 +1,16 @@
 "use client";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
-import { rpc } from "@/lib/rpc";
+import { connection, rpc } from "@/lib/rpc";
 import UpdateCard from "./update-card";
+import { useOrdersStore } from "@/store/useOrderStore";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export interface Token {
   id: string; // mint address
@@ -19,21 +21,20 @@ export interface Token {
   tokenProgram: string;
 }
 
-// TODO: price check, date check
-// on submit shouldn't close
+// TODO: price check
 // reset button
 
-type OrdersCardProps = {
-  orders: Order[];
-  cancelOrder: (order: Order["address"], maker: Order["maker"]) => void;
-};
+export default function OrdersCard() {
+  const { orders, removeOrder } = useOrdersStore();
+  const { sendTransaction } = useWallet();
 
-export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
-  const [currentPage, setCurrentPage] = useState(1);
   const [tokens, setTokens] = useState<Record<string, Token>>({});
+
   const pageSize = 5;
+  const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(orders.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
+
   const currentOrders = orders.slice(startIndex, startIndex + pageSize);
 
   useEffect(() => {
@@ -134,6 +135,69 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
     setIsUpdateDialogOpen(false);
   };
 
+  const cancelOrder = async (order: PublicKey, maker: PublicKey) => {
+    const loadingToast = toast.loading("creating the Transaction...");
+    try {
+      const res = await fetch(
+        `/api/instructions/cancel?order=${order.toString()}&maker=${maker.toString()}`,
+      );
+
+      const { tx } = await res.json();
+
+      const txBuffer = Buffer.from(tx, "base64");
+
+      const transaction = VersionedTransaction.deserialize(txBuffer);
+
+      toast.loading("Sign the Transaction", { id: loadingToast });
+
+      const signature = await sendTransaction(transaction, connection);
+
+      toast.loading("Signed Transaction", {
+        id: loadingToast,
+        description: `Waiting for confirmation...`,
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+
+      await connection.confirmTransaction(
+        {
+          signature: signature,
+          ...(await connection.getLatestBlockhash()),
+        },
+        "confirmed",
+      );
+
+      toast.success("Transaction confirmed ✅", {
+        description: "Your transaction was finalized.",
+        id: loadingToast,
+        action: {
+          label: "Explorer",
+          onClick: () =>
+            window.open(
+              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+              "_blank",
+            ),
+        },
+      });
+
+      removeOrder(order.toString());
+    } catch (err) {
+      console.error(err);
+      toast.error("Transaction failed ❌", {
+        id: loadingToast,
+        description: String(err).includes("Closed")
+          ? "Wallet Signing Failed"
+          : String(err),
+      });
+    }
+  };
+
   return (
     <>
       <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
@@ -207,7 +271,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => openEdit(order)}
-                        className="text-blue-400 hover:text-blue-500 hover:bg-blue-500/10"
+                        className="text-blue-400 hover:text-blue-500 hover:bg-blue-500/10 cursor-pointer"
                       >
                         ✏️Update
                       </Button>

@@ -4,6 +4,7 @@ import { ADDRESS_QUEUE, ADDRESS_TREE, CLOSE_ACCOUNTS } from "@/lib/address";
 import {
   ComputeBudgetProgram,
   PublicKey,
+  SystemProgram,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
@@ -12,6 +13,7 @@ import { NextResponse } from "next/server";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createCloseAccountInstruction,
+  createSyncNativeInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { parseOrderFromBuffer } from "@/lib/utils";
@@ -149,6 +151,8 @@ export async function GET(req: Request) {
     const sol_mint = new PublicKey(
       "So11111111111111111111111111111111111111112",
     );
+
+    const diff = making_amount - escrow_data.amount.makingAmount.toNumber();
     if (escrow_data.tokens.inputMint.equals(sol_mint)) {
       const ata = await getAssociatedTokenAddress(sol_mint, maker);
 
@@ -160,6 +164,18 @@ export async function GET(req: Request) {
           sol_mint,
         ),
       );
+
+      if (diff > 0) {
+        instructions.push(
+          SystemProgram.transfer({
+            fromPubkey: maker,
+            toPubkey: ata,
+            lamports: making_amount,
+          }),
+        );
+
+        instructions.push(createSyncNativeInstruction(ata));
+      }
 
       instructions.push(instruction);
 

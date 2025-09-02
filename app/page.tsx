@@ -18,12 +18,13 @@ import { connection, sol, usdc } from "@/lib/rpc";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { fetch_quote, get_current_rate, Token } from "@/lib/jup";
+import { fetch_quote, get_current_rate } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
-import OrdersCard from "@/components/orders-card";
+import OrdersCard, { Token } from "@/components/orders-card";
 import { getOpenOrders } from "@/lib/orders";
 import HistoryCard from "@/components/history-card";
 import { History } from "./api/orders/history/route";
+import { useOrdersStore } from "@/store/useOrderStore";
 
 export default function App() {
   const { connected, publicKey, sendTransaction, connecting, disconnecting } =
@@ -37,7 +38,7 @@ export default function App() {
     }
   }, [connecting, disconnecting, connected, publicKey]);
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { setOrders, addOrder } = useOrdersStore();
 
   useEffect(() => {
     async function fetchOrders() {
@@ -195,72 +196,7 @@ export default function App() {
         feeBps: 5,
       };
 
-      setOrders((prev) => [new_order, ...prev]);
-    } catch (err) {
-      console.error(err);
-      toast.error("Transaction failed ❌", {
-        id: loadingToast,
-        description: String(err).includes("Closed")
-          ? "Wallet Signing Failed"
-          : String(err),
-      });
-    }
-  };
-
-  const cancelOrder = async (order: PublicKey, maker: PublicKey) => {
-    const loadingToast = toast.loading("creating the Transaction...");
-    try {
-      const res = await fetch(
-        `/api/instructions/cancel?order=${order.toString()}&maker=${maker.toString()}`,
-      );
-
-      const { tx } = await res.json();
-
-      const txBuffer = Buffer.from(tx, "base64");
-
-      const transaction = VersionedTransaction.deserialize(txBuffer);
-
-      toast.loading("Sign the Transaction", { id: loadingToast });
-
-      const signature = await sendTransaction(transaction, connection);
-
-      toast.loading("Signed Transaction", {
-        id: loadingToast,
-        description: `Waiting for confirmation...`,
-        action: {
-          label: "Explorer",
-          onClick: () =>
-            window.open(
-              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-              "_blank",
-            ),
-        },
-      });
-
-      await connection.confirmTransaction(
-        {
-          signature: signature,
-          ...(await connection.getLatestBlockhash()),
-        },
-        "confirmed",
-      );
-
-      toast.success("Transaction confirmed ✅", {
-        description: "Your transaction was finalized.",
-        id: loadingToast,
-        action: {
-          label: "Explorer",
-          onClick: () =>
-            window.open(
-              `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-              "_blank",
-            ),
-        },
-      });
-
-      setOrders((prev) =>
-        prev.filter((item) => item.address.toString() !== order.toString()),
-      );
+      addOrder(new_order);
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {
@@ -439,7 +375,7 @@ export default function App() {
             </Button>
           </CardContent>
         </Card>
-        <OrdersCard orders={orders} cancelOrder={cancelOrder} />
+        <OrdersCard />
         <HistoryCard events={history} />
       </div>
     </div>

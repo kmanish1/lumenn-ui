@@ -1,4 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
+import Decimal from "decimal.js";
+
 import { ADDRESS_TREE, PROGRAM_ID } from "@/lib/address";
 import { deriveAddress, deriveAddressSeed } from "@lightprotocol/stateless.js";
 import { twMerge } from "tailwind-merge";
@@ -104,3 +106,15 @@ export function derive_escrow_address(maker: PublicKey, id: BN): PublicKey {
   const address = deriveAddress(assetSeed, ADDRESS_TREE);
   return address;
 }
+
+export const toHumanReadable = (rawAmount: BN, decimals: number): number => {
+  if (!rawAmount || decimals < 0) return 0;
+  const divisor = new Decimal(10).pow(decimals);
+  return new Decimal(rawAmount.toString()).div(divisor).toNumber();
+};
+
+export const toRawAmount = (humanAmount: number, decimals: number): BN => {
+  if (humanAmount <= 0 || decimals < 0) return new BN(0);
+  const amount = new Decimal(humanAmount).mul(new Decimal(10).pow(decimals));
+  return new BN(amount.toFixed(0)); // Ensure integer for BN
+};

@@ -1,11 +1,4 @@
-export type Token = {
-  id: string;
-  name: string;
-  symbol: string;
-  icon: string;
-  decimals: number;
-  tokenProgram: string;
-};
+import { Token } from "@/components/orders-card";
 
 export async function search_tokens(query: string): Promise<Token[]> {
   try {
