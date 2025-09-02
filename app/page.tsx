@@ -59,7 +59,7 @@ export default function App() {
           `/api/orders/history?maker=${publicKey?.toString()}`,
         );
         const data = await res.json();
-        setHistory(data.history);
+        setHistory(data.history ?? []);
       }
     }
 
