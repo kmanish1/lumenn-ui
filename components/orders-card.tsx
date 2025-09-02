@@ -21,7 +21,7 @@ interface Token {
 
 type OrdersCardProps = {
   orders: Order[];
-  cancelOrder: (id: BN, maker: Order["maker"]) => void;
+  cancelOrder: (order: Order["address"], maker: Order["maker"]) => void;
 };
 
 export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
@@ -172,7 +172,7 @@ export default function OrdersCard({ orders, cancelOrder }: OrdersCardProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => cancelOrder(order.uniqueId, order.maker)}
+                    onClick={() => cancelOrder(order.address, order.maker)}
                     className="flex flex-col items-center justify-center gap-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
                   >
                     <X className="h-4 w-4" />

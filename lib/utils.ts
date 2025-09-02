@@ -1,4 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
+import { ADDRESS_TREE, PROGRAM_ID } from "@/lib/address";
+import { deriveAddress, deriveAddressSeed } from "@lightprotocol/stateless.js";
 import { twMerge } from "tailwind-merge";
 import BN from "bn.js";
 import { Buffer } from "buffer";
@@ -11,6 +13,7 @@ export function cn(...inputs: ClassValue[]) {
 export type Order = {
   maker: PublicKey;
   uniqueId: BN;
+  address: PublicKey;
   tokens: {
     inputMint: PublicKey;
     outputMint: PublicKey;
@@ -54,9 +57,15 @@ export function parseOrderFromBuffer(buffer: Buffer): Order {
   const slippage_bps = buffer.readUInt16LE(224);
   const fee_bps = buffer.readUInt16LE(226);
 
+  const address = derive_escrow_address(
+    new PublicKey(maker_bytes),
+    new BN(unique_id),
+  );
+
   return {
     maker: new PublicKey(maker_bytes),
     uniqueId: new BN(unique_id.toString()),
+    address,
     tokens: {
       inputMint: new PublicKey(input_mint_bytes),
       outputMint: new PublicKey(output_mint),
@@ -82,4 +91,16 @@ export function randomU64(): bigint {
   const high = BigInt(Math.floor(Math.random() * 0x100000000)); // upper 32 bits
   const low = BigInt(Math.floor(Math.random() * 0x100000000)); // lower 32 bits
   return (high << 32n) | low;
+}
+
+export function derive_escrow_address(maker: PublicKey, id: BN): PublicKey {
+  const seeds: Uint8Array[] = [
+    Buffer.from("escrow"),
+    new BN(id).toArrayLike(Buffer, "le", 8),
+    maker.toBuffer(),
+  ];
+
+  const assetSeed = deriveAddressSeed(seeds, PROGRAM_ID);
+  const address = deriveAddress(assetSeed, ADDRESS_TREE);
+  return address;
 }

@@ -25,7 +25,7 @@ import {
 } from "@/lib/address";
 import { rpc } from "@/lib/rpc";
 import BN from "bn.js";
-import { randomU64 } from "@/lib/utils";
+import { derive_escrow_address, randomU64 } from "@/lib/utils";
 import { anchor_idl } from "@/lib/idl";
 import { tokenMap } from "../../tokens/route";
 
@@ -190,9 +190,12 @@ export async function GET(req: Request) {
     const tx = new VersionedTransaction(message);
     const serialized = Buffer.from(tx.serialize()).toString("base64");
 
+    const order = derive_escrow_address(maker, unique_id);
+
     return NextResponse.json({
       tx: serialized,
       unique_id: unique_id.toString(),
+      order,
     });
   } catch (err) {
     console.error("Error in GET /api/instructions/init:", err);

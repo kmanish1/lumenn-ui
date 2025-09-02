@@ -1,23 +1,13 @@
-import {
-  bn,
-  deriveAddress,
-  deriveAddressSeed,
-} from "@lightprotocol/stateless.js";
+import { bn } from "@lightprotocol/stateless.js";
 import { rpc } from "@/lib/rpc";
 
-import {
-  ADDRESS_QUEUE,
-  ADDRESS_TREE,
-  CLOSE_ACCOUNTS,
-  PROGRAM_ID,
-} from "@/lib/address";
+import { ADDRESS_QUEUE, ADDRESS_TREE, CLOSE_ACCOUNTS } from "@/lib/address";
 import {
   ComputeBudgetProgram,
   PublicKey,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import BN from "bn.js";
 import { NextResponse } from "next/server";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -30,7 +20,7 @@ import { anchor_idl } from "@/lib/idl";
 /**
  * ```
  * const res = await fetch(
- *   `/api/instructions/cancel?id=${unique_id}&maker=${maker.toString()}`,
+ *   `/api/instructions/cancel?order=${order.toString}&maker=${maker.toString()}`,
  * );
  *
  * const { tx } = await res.json();
@@ -47,12 +37,9 @@ import { anchor_idl } from "@/lib/idl";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    const maker_address = searchParams.get("maker");
 
-    if (!id) {
-      return NextResponse.json({ error: "Missing id param" }, { status: 400 });
-    }
+    const order_address = searchParams.get("order");
+    const maker_address = searchParams.get("maker");
 
     if (!maker_address) {
       return NextResponse.json(
@@ -71,21 +58,28 @@ export async function GET(req: Request) {
       );
     }
 
-    const unique_id = new BN(id);
+    if (!order_address) {
+      return NextResponse.json(
+        { error: "Missing order address param" },
+        { status: 400 },
+      );
+    }
+
+    try {
+      new PublicKey(order_address);
+    } catch (err) {
+      console.error(err);
+      return NextResponse.json(
+        { error: "order is not a valid public key" },
+        { status: 400 },
+      );
+    }
 
     const maker = new PublicKey(maker_address);
-
-    const seeds: Uint8Array[] = [
-      Buffer.from("escrow"),
-      unique_id.toArrayLike(Buffer, "le", 8),
-      maker.toBuffer(),
-    ];
-
-    const assetSeed = deriveAddressSeed(seeds, PROGRAM_ID);
-    const address = deriveAddress(assetSeed, ADDRESS_TREE);
+    const order = new PublicKey(order_address);
 
     const compressed_account = await rpc.getCompressedAccount(
-      bn(address.toBytes()),
+      bn(order.toBytes()),
     );
 
     if (!compressed_account) {

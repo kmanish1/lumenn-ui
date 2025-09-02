@@ -665,7 +665,7 @@
     },
     {
       "name": "fill_wsol_order",
-      "discriminator": [4],
+      "discriminator": [3],
       "accounts": [
         {
           "name": "payer",
@@ -1008,13 +1008,12 @@
       ]
     },
     {
-      "name": "partial_fill",
+      "name": "update_order",
       "docs": [
-        "partial fill the order when the price reaches the user target",
-        "used when there is limited liquidity in the market",
-        "light compressed escrow account state udpated not closed"
+        "Update an existing order, change the making and taking amount",
+        "change the expiry time"
       ],
-      "discriminator": [3],
+      "discriminator": [54, 8, 208, 207, 34, 134, 239, 168],
       "accounts": [
         {
           "name": "payer",
@@ -1023,10 +1022,38 @@
         },
         {
           "name": "maker",
-          "writable": true
+          "signer": true
         },
         {
           "name": "input_mint"
+        },
+        {
+          "name": "maker_input_mint_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "maker"
+              },
+              {
+                "kind": "account",
+                "path": "input_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "input_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+                219, 233, 248, 89
+              ]
+            }
+          }
         },
         {
           "name": "output_mint"
@@ -1074,201 +1101,13 @@
           }
         },
         {
-          "name": "protocol_vault_output_mint_ata",
+          "name": "protocol_vault_input_mint_ata",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
                 "path": "protocol_vault"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "output_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
-                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
-                219, 233, 248, 89
-              ]
-            }
-          }
-        },
-        {
-          "name": "input_token_program"
-        },
-        {
-          "name": "output_token_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "jupiter_program"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "PartialFillOrderParams"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "partial_fill_wsol",
-      "discriminator": [5],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "payer_wsol_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "payer"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "sol_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
-                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
-                219, 233, 248, 89
-              ]
-            }
-          }
-        },
-        {
-          "name": "maker",
-          "writable": true
-        },
-        {
-          "name": "input_mint"
-        },
-        {
-          "name": "sol_mint",
-          "address": "So11111111111111111111111111111111111111112"
-        },
-        {
-          "name": "maker_output_mint_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "maker"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "sol_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
-                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
-                219, 233, 248, 89
-              ]
-            }
-          }
-        },
-        {
-          "name": "protocol_vault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112, 114, 111, 116, 111, 99, 111, 108, 95, 118, 97, 117, 108,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "protocol_vault_output_mint_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "protocol_vault"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "sol_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
-                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
-                219, 233, 248, 89
-              ]
-            }
-          }
-        },
-        {
-          "name": "temp_account",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  116, 101, 109, 112, 95, 97, 99, 99, 111, 117, 110, 116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "temp_wsol_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "temp_account"
               },
               {
                 "kind": "account",
@@ -1276,7 +1115,7 @@
               },
               {
                 "kind": "account",
-                "path": "sol_mint"
+                "path": "input_mint"
               }
             ],
             "program": {
@@ -1302,9 +1141,6 @@
         {
           "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "jupiter_program"
         }
       ],
       "args": [
@@ -1312,7 +1148,7 @@
           "name": "args",
           "type": {
             "defined": {
-              "name": "PartialFillOrderParams"
+              "name": "UpdateOrderArgs"
             }
           }
         }
@@ -1321,12 +1157,8 @@
   ],
   "events": [
     {
-      "name": "ExpireOrderEvent",
-      "discriminator": [194, 106, 80, 205, 43, 150, 129, 169]
-    },
-    {
-      "name": "FillOrderEvent",
-      "discriminator": [37, 51, 197, 130, 53, 15, 99, 18]
+      "name": "FillEvent",
+      "discriminator": [13, 89, 41, 228, 105, 178, 45, 112]
     },
     {
       "name": "OrderCancelled",
@@ -1337,8 +1169,8 @@
       "discriminator": [180, 118, 44, 249, 166, 25, 40, 81]
     },
     {
-      "name": "PartialFillOrderEvent",
-      "discriminator": [210, 49, 211, 102, 0, 114, 94, 162]
+      "name": "OrderUpdateEvent",
+      "discriminator": [74, 87, 9, 53, 182, 80, 78, 75]
     }
   ],
   "errors": [
@@ -1491,6 +1323,11 @@
       "code": 6029,
       "name": "OrderNotExpired",
       "msg": "Order not expired"
+    },
+    {
+      "code": 6030,
+      "name": "ExpireWSolInstruction",
+      "msg": "Call ExpireWSol Instruction"
     }
   ],
   "types": [
@@ -1785,52 +1622,12 @@
       }
     },
     {
-      "name": "ExpireOrderEvent",
+      "name": "FillEvent",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "escrow_account",
-            "type": "pubkey"
-          },
-          {
-            "name": "maker",
-            "type": "pubkey"
-          },
-          {
-            "name": "input_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "output_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "unique_id",
-            "type": "u64"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "expired_at",
-            "type": "i64"
-          },
-          {
-            "name": "closed_at",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "FillOrderEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "escrow_account",
+            "name": "escrow_address",
             "type": "pubkey"
           },
           {
@@ -1858,8 +1655,20 @@
             "type": "u64"
           },
           {
+            "name": "slippage_bps",
+            "type": "u16"
+          },
+          {
             "name": "fee_bps",
             "type": "u16"
+          },
+          {
+            "name": "fill_type",
+            "type": {
+              "defined": {
+                "name": "FillType"
+              }
+            }
           }
         ]
       }
@@ -1900,6 +1709,28 @@
           {
             "name": "output_state_tree_index",
             "type": "u8"
+          },
+          {
+            "name": "fill_type",
+            "type": {
+              "defined": {
+                "name": "FillType"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FillType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Full"
+          },
+          {
+            "name": "Partial"
           }
         ]
       }
@@ -1968,7 +1799,7 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "escrow_addrees",
+            "name": "escrow_address",
             "type": "pubkey"
           },
           {
@@ -1988,6 +1819,14 @@
             "type": "pubkey"
           },
           {
+            "name": "making_amount",
+            "type": "u64"
+          },
+          {
+            "name": "taking_amount",
+            "type": "u64"
+          },
+          {
             "name": "is_expired",
             "type": "bool"
           },
@@ -2004,6 +1843,58 @@
     },
     {
       "name": "OrderInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "escrow_address",
+            "type": "pubkey"
+          },
+          {
+            "name": "maker",
+            "type": "pubkey"
+          },
+          {
+            "name": "unique_id",
+            "type": "u64"
+          },
+          {
+            "name": "input_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "output_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "input_mint_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "output_mint_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "making_amount",
+            "type": "u64"
+          },
+          {
+            "name": "taking_amount",
+            "type": "u64"
+          },
+          {
+            "name": "slippage_bps",
+            "type": "u16"
+          },
+          {
+            "name": "expired_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderUpdateEvent",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2103,18 +1994,10 @@
       }
     },
     {
-      "name": "PartialFillOrderEvent",
+      "name": "Tokens",
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "escrow_address",
-            "type": "pubkey"
-          },
-          {
-            "name": "maker",
-            "type": "pubkey"
-          },
           {
             "name": "input_mint",
             "type": "pubkey"
@@ -2124,33 +2007,21 @@
             "type": "pubkey"
           },
           {
-            "name": "in_amount",
-            "type": "u64"
+            "name": "input_token_program",
+            "type": "pubkey"
           },
           {
-            "name": "out_amount",
-            "type": "u64"
-          },
-          {
-            "name": "slippage_bps",
-            "type": "u16"
-          },
-          {
-            "name": "fee_bps",
-            "type": "u16"
+            "name": "output_token_program",
+            "type": "pubkey"
           }
         ]
       }
     },
     {
-      "name": "PartialFillOrderParams",
+      "name": "UpdateOrderArgs",
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "swap_data",
-            "type": "bytes"
-          },
           {
             "name": "escrow_account",
             "type": {
@@ -2178,30 +2049,24 @@
           {
             "name": "output_state_tree_index",
             "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Tokens",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "input_mint",
-            "type": "pubkey"
           },
           {
-            "name": "output_mint",
-            "type": "pubkey"
+            "name": "making_amount",
+            "type": {
+              "option": "u64"
+            }
           },
           {
-            "name": "input_token_program",
-            "type": "pubkey"
+            "name": "taking_amount",
+            "type": {
+              "option": "u64"
+            }
           },
           {
-            "name": "output_token_program",
-            "type": "pubkey"
+            "name": "expired_at",
+            "type": {
+              "option": "i64"
+            }
           }
         ]
       }

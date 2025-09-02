@@ -128,7 +128,7 @@ export default function App() {
           `&expired_at=${expiry}`,
       );
 
-      const { tx, unique_id } = await res.json();
+      const { tx, unique_id, order } = await res.json();
 
       const txBuffer = Buffer.from(tx, "base64");
 
@@ -175,6 +175,7 @@ export default function App() {
       const new_order: Order = {
         maker: publicKey,
         uniqueId: unique_id,
+        address: order,
         tokens: {
           inputMint: new PublicKey(inputToken.id),
           outputMint: new PublicKey(outputToken.id),
@@ -206,11 +207,11 @@ export default function App() {
     }
   };
 
-  const cancelOrder = async (unique_id: BN, maker: PublicKey) => {
+  const cancelOrder = async (order: PublicKey, maker: PublicKey) => {
     const loadingToast = toast.loading("creating the Transaction...");
     try {
       const res = await fetch(
-        `/api/instructions/cancel?id=${unique_id}&maker=${maker.toString()}`,
+        `/api/instructions/cancel?order=${order.toString()}&maker=${maker.toString()}`,
       );
 
       const { tx } = await res.json();
@@ -257,7 +258,9 @@ export default function App() {
         },
       });
 
-      setOrders((prev) => prev.filter((order) => order.uniqueId !== unique_id));
+      setOrders((prev) =>
+        prev.filter((item) => item.address.toString() !== order.toString()),
+      );
     } catch (err) {
       console.error(err);
       toast.error("Transaction failed ❌", {

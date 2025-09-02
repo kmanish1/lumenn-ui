@@ -1019,7 +1019,7 @@ export type Elara = {
     },
     {
       name: "fillWsolOrder";
-      discriminator: [4];
+      discriminator: [3];
       accounts: [
         {
           name: "payer";
@@ -1587,13 +1587,12 @@ export type Elara = {
       ];
     },
     {
-      name: "partialFill";
+      name: "updateOrder";
       docs: [
-        "partial fill the order when the price reaches the user target",
-        "used when there is limited liquidity in the market",
-        "light compressed escrow account state udpated not closed",
+        "Update an existing order, change the making and taking amount",
+        "change the expiry time",
       ];
-      discriminator: [3];
+      discriminator: [54, 8, 208, 207, 34, 134, 239, 168];
       accounts: [
         {
           name: "payer";
@@ -1602,10 +1601,67 @@ export type Elara = {
         },
         {
           name: "maker";
-          writable: true;
+          signer: true;
         },
         {
           name: "inputMint";
+        },
+        {
+          name: "makerInputMintAta";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "account";
+                path: "maker";
+              },
+              {
+                kind: "account";
+                path: "inputTokenProgram";
+              },
+              {
+                kind: "account";
+                path: "inputMint";
+              },
+            ];
+            program: {
+              kind: "const";
+              value: [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89,
+              ];
+            };
+          };
         },
         {
           name: "outputMint";
@@ -1694,327 +1750,13 @@ export type Elara = {
           };
         },
         {
-          name: "protocolVaultOutputMintAta";
+          name: "protocolVaultInputMintAta";
           writable: true;
           pda: {
             seeds: [
               {
                 kind: "account";
                 path: "protocolVault";
-              },
-              {
-                kind: "account";
-                path: "outputTokenProgram";
-              },
-              {
-                kind: "account";
-                path: "outputMint";
-              },
-            ];
-            program: {
-              kind: "const";
-              value: [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89,
-              ];
-            };
-          };
-        },
-        {
-          name: "inputTokenProgram";
-        },
-        {
-          name: "outputTokenProgram";
-        },
-        {
-          name: "systemProgram";
-          address: "11111111111111111111111111111111";
-        },
-        {
-          name: "associatedTokenProgram";
-          address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
-        },
-        {
-          name: "jupiterProgram";
-        },
-      ];
-      args: [
-        {
-          name: "args";
-          type: {
-            defined: {
-              name: "partialFillOrderParams";
-            };
-          };
-        },
-      ];
-    },
-    {
-      name: "partialFillWsol";
-      discriminator: [5];
-      accounts: [
-        {
-          name: "payer";
-          writable: true;
-          signer: true;
-        },
-        {
-          name: "payerWsolAta";
-          writable: true;
-          pda: {
-            seeds: [
-              {
-                kind: "account";
-                path: "payer";
-              },
-              {
-                kind: "account";
-                path: "outputTokenProgram";
-              },
-              {
-                kind: "account";
-                path: "solMint";
-              },
-            ];
-            program: {
-              kind: "const";
-              value: [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89,
-              ];
-            };
-          };
-        },
-        {
-          name: "maker";
-          writable: true;
-        },
-        {
-          name: "inputMint";
-        },
-        {
-          name: "solMint";
-          address: "So11111111111111111111111111111111111111112";
-        },
-        {
-          name: "makerOutputMintAta";
-          writable: true;
-          pda: {
-            seeds: [
-              {
-                kind: "account";
-                path: "maker";
-              },
-              {
-                kind: "account";
-                path: "outputTokenProgram";
-              },
-              {
-                kind: "account";
-                path: "solMint";
-              },
-            ];
-            program: {
-              kind: "const";
-              value: [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89,
-              ];
-            };
-          };
-        },
-        {
-          name: "protocolVault";
-          pda: {
-            seeds: [
-              {
-                kind: "const";
-                value: [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116,
-                ];
-              },
-            ];
-          };
-        },
-        {
-          name: "protocolVaultOutputMintAta";
-          writable: true;
-          pda: {
-            seeds: [
-              {
-                kind: "account";
-                path: "protocolVault";
-              },
-              {
-                kind: "account";
-                path: "outputTokenProgram";
-              },
-              {
-                kind: "account";
-                path: "solMint";
-              },
-            ];
-            program: {
-              kind: "const";
-              value: [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89,
-              ];
-            };
-          };
-        },
-        {
-          name: "tempAccount";
-          pda: {
-            seeds: [
-              {
-                kind: "const";
-                value: [116, 101, 109, 112, 95, 97, 99, 99, 111, 117, 110, 116];
-              },
-            ];
-          };
-        },
-        {
-          name: "tempWsolAta";
-          writable: true;
-          pda: {
-            seeds: [
-              {
-                kind: "account";
-                path: "tempAccount";
               },
               {
                 kind: "account";
@@ -2022,7 +1764,7 @@ export type Elara = {
               },
               {
                 kind: "account";
-                path: "solMint";
+                path: "inputMint";
               },
             ];
             program: {
@@ -2078,16 +1820,13 @@ export type Elara = {
           name: "associatedTokenProgram";
           address: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
         },
-        {
-          name: "jupiterProgram";
-        },
       ];
       args: [
         {
           name: "args";
           type: {
             defined: {
-              name: "partialFillOrderParams";
+              name: "updateOrderArgs";
             };
           };
         },
@@ -2096,12 +1835,8 @@ export type Elara = {
   ];
   events: [
     {
-      name: "expireOrderEvent";
-      discriminator: [194, 106, 80, 205, 43, 150, 129, 169];
-    },
-    {
-      name: "fillOrderEvent";
-      discriminator: [37, 51, 197, 130, 53, 15, 99, 18];
+      name: "fillEvent";
+      discriminator: [13, 89, 41, 228, 105, 178, 45, 112];
     },
     {
       name: "orderCancelled";
@@ -2112,8 +1847,8 @@ export type Elara = {
       discriminator: [180, 118, 44, 249, 166, 25, 40, 81];
     },
     {
-      name: "partialFillOrderEvent";
-      discriminator: [210, 49, 211, 102, 0, 114, 94, 162];
+      name: "orderUpdateEvent";
+      discriminator: [74, 87, 9, 53, 182, 80, 78, 75];
     },
   ];
   errors: [
@@ -2266,6 +2001,11 @@ export type Elara = {
       code: 6029;
       name: "orderNotExpired";
       msg: "Order not expired";
+    },
+    {
+      code: 6030;
+      name: "expireWSolInstruction";
+      msg: "Call ExpireWSol Instruction";
     },
   ];
   types: [
@@ -2560,52 +2300,12 @@ export type Elara = {
       };
     },
     {
-      name: "expireOrderEvent";
+      name: "fillEvent";
       type: {
         kind: "struct";
         fields: [
           {
-            name: "escrowAccount";
-            type: "pubkey";
-          },
-          {
-            name: "maker";
-            type: "pubkey";
-          },
-          {
-            name: "inputMint";
-            type: "pubkey";
-          },
-          {
-            name: "outputMint";
-            type: "pubkey";
-          },
-          {
-            name: "uniqueId";
-            type: "u64";
-          },
-          {
-            name: "amount";
-            type: "u64";
-          },
-          {
-            name: "expiredAt";
-            type: "i64";
-          },
-          {
-            name: "closedAt";
-            type: "i64";
-          },
-        ];
-      };
-    },
-    {
-      name: "fillOrderEvent";
-      type: {
-        kind: "struct";
-        fields: [
-          {
-            name: "escrowAccount";
+            name: "escrowAddress";
             type: "pubkey";
           },
           {
@@ -2633,8 +2333,20 @@ export type Elara = {
             type: "u64";
           },
           {
+            name: "slippageBps";
+            type: "u16";
+          },
+          {
             name: "feeBps";
             type: "u16";
+          },
+          {
+            name: "fillType";
+            type: {
+              defined: {
+                name: "fillType";
+              };
+            };
           },
         ];
       };
@@ -2675,6 +2387,28 @@ export type Elara = {
           {
             name: "outputStateTreeIndex";
             type: "u8";
+          },
+          {
+            name: "fillType";
+            type: {
+              defined: {
+                name: "fillType";
+              };
+            };
+          },
+        ];
+      };
+    },
+    {
+      name: "fillType";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "full";
+          },
+          {
+            name: "partial";
           },
         ];
       };
@@ -2743,7 +2477,7 @@ export type Elara = {
         kind: "struct";
         fields: [
           {
-            name: "escrowAddrees";
+            name: "escrowAddress";
             type: "pubkey";
           },
           {
@@ -2763,6 +2497,14 @@ export type Elara = {
             type: "pubkey";
           },
           {
+            name: "makingAmount";
+            type: "u64";
+          },
+          {
+            name: "takingAmount";
+            type: "u64";
+          },
+          {
             name: "isExpired";
             type: "bool";
           },
@@ -2779,6 +2521,58 @@ export type Elara = {
     },
     {
       name: "orderInitialized";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "escrowAddress";
+            type: "pubkey";
+          },
+          {
+            name: "maker";
+            type: "pubkey";
+          },
+          {
+            name: "uniqueId";
+            type: "u64";
+          },
+          {
+            name: "inputMint";
+            type: "pubkey";
+          },
+          {
+            name: "outputMint";
+            type: "pubkey";
+          },
+          {
+            name: "inputMintDecimals";
+            type: "u8";
+          },
+          {
+            name: "outputMintDecimals";
+            type: "u8";
+          },
+          {
+            name: "makingAmount";
+            type: "u64";
+          },
+          {
+            name: "takingAmount";
+            type: "u64";
+          },
+          {
+            name: "slippageBps";
+            type: "u16";
+          },
+          {
+            name: "expiredAt";
+            type: "i64";
+          },
+        ];
+      };
+    },
+    {
+      name: "orderUpdateEvent";
       type: {
         kind: "struct";
         fields: [
@@ -2878,18 +2672,10 @@ export type Elara = {
       };
     },
     {
-      name: "partialFillOrderEvent";
+      name: "tokens";
       type: {
         kind: "struct";
         fields: [
-          {
-            name: "escrowAddress";
-            type: "pubkey";
-          },
-          {
-            name: "maker";
-            type: "pubkey";
-          },
           {
             name: "inputMint";
             type: "pubkey";
@@ -2899,33 +2685,21 @@ export type Elara = {
             type: "pubkey";
           },
           {
-            name: "inAmount";
-            type: "u64";
+            name: "inputTokenProgram";
+            type: "pubkey";
           },
           {
-            name: "outAmount";
-            type: "u64";
-          },
-          {
-            name: "slippageBps";
-            type: "u16";
-          },
-          {
-            name: "feeBps";
-            type: "u16";
+            name: "outputTokenProgram";
+            type: "pubkey";
           },
         ];
       };
     },
     {
-      name: "partialFillOrderParams";
+      name: "updateOrderArgs";
       type: {
         kind: "struct";
         fields: [
-          {
-            name: "swapData";
-            type: "bytes";
-          },
           {
             name: "escrowAccount";
             type: {
@@ -2954,29 +2728,23 @@ export type Elara = {
             name: "outputStateTreeIndex";
             type: "u8";
           },
-        ];
-      };
-    },
-    {
-      name: "tokens";
-      type: {
-        kind: "struct";
-        fields: [
           {
-            name: "inputMint";
-            type: "pubkey";
+            name: "makingAmount";
+            type: {
+              option: "u64";
+            };
           },
           {
-            name: "outputMint";
-            type: "pubkey";
+            name: "takingAmount";
+            type: {
+              option: "u64";
+            };
           },
           {
-            name: "inputTokenProgram";
-            type: "pubkey";
-          },
-          {
-            name: "outputTokenProgram";
-            type: "pubkey";
+            name: "expiredAt";
+            type: {
+              option: "i64";
+            };
           },
         ];
       };

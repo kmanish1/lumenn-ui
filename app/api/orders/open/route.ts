@@ -31,6 +31,7 @@ export async function GET(req: Request) {
       return {
         maker: order.maker.toString(),
         uniqueId: order.uniqueId.toString(),
+        order: order.address.toString(),
         tokens: {
           inputMint: order.tokens.inputMint.toString(),
           outputMint: order.tokens.outputMint.toString(),
