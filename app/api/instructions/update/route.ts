@@ -169,7 +169,7 @@ export async function GET(req: Request) {
           SystemProgram.transfer({
             fromPubkey: maker,
             toPubkey: ata,
-            lamports: making_amount,
+            lamports: diff,
           }),
         );
 
