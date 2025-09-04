@@ -112,7 +112,6 @@ export async function GET(req: Request) {
           makingAmount: new BN(inputAmount),
           takingAmount: new BN(outputAmount),
           expiredAt: expiredAt === 0 ? null : new BN(expiredAt),
-          slippageBps: 50,
         },
         {
           proof: {

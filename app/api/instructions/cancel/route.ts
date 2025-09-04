@@ -114,7 +114,6 @@ export async function GET(req: Request) {
             oriTakingAmount: escrow_data.amount.oriTakingAmount,
           },
           expiredAt: escrow_data.expiredAt,
-          slippageBps: escrow_data.slippageBps,
           feeBps: escrow_data.feeBps,
           createdAt: escrow_data.createdAt,
           updatedAt: escrow_data.updatedAt,

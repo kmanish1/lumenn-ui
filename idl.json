@@ -1011,7 +1011,8 @@
       "name": "update_order",
       "docs": [
         "Update an existing order, change the making and taking amount",
-        "change the expiry time"
+        "change the expiry time",
+        "NOTE: no need a new instruction for wsol as this is signed by the payer itself"
       ],
       "discriminator": [54, 8, 208, 207, 34, 134, 239, 168],
       "accounts": [
@@ -1349,10 +1350,6 @@
             }
           },
           {
-            "name": "slippage_bps",
-            "type": "u16"
-          },
-          {
             "name": "fee_bps",
             "type": "u16"
           },
@@ -1611,10 +1608,6 @@
             "type": "i64"
           },
           {
-            "name": "slippage_bps",
-            "type": "u16"
-          },
-          {
             "name": "fee_bps",
             "type": "u16"
           }
@@ -1653,10 +1646,6 @@
           {
             "name": "out_amount",
             "type": "u64"
-          },
-          {
-            "name": "slippage_bps",
-            "type": "u16"
           },
           {
             "name": "fee_bps",
@@ -1757,10 +1746,6 @@
             "type": {
               "option": "i64"
             }
-          },
-          {
-            "name": "slippage_bps",
-            "type": "u16"
           }
         ]
       }
@@ -1883,10 +1868,6 @@
             "type": "u64"
           },
           {
-            "name": "slippage_bps",
-            "type": "u16"
-          },
-          {
             "name": "expired_at",
             "type": "i64"
           }
@@ -1933,10 +1914,6 @@
           {
             "name": "taking_amount",
             "type": "u64"
-          },
-          {
-            "name": "slippage_bps",
-            "type": "u16"
           },
           {
             "name": "expired_at",

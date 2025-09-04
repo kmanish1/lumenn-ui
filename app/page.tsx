@@ -192,7 +192,6 @@ export default function App() {
         expiredAt: new BN(expiry),
         createdAt: new BN(Date.now() / 1000),
         updatedAt: new BN(Date.now() / 1000),
-        slippageBps: 50,
         feeBps: 5,
       };
 

@@ -237,7 +237,6 @@ function decodeFillEvent(base64Data: string) {
   offset += 8;
   const out_amount = buf.readBigUInt64LE(offset);
   offset += 8;
-  offset += 2; // slippage_bps
   offset += 2; // fee_bps
   const fill_type = buf.readUInt8(offset) === 0 ? "Full" : "Partial";
 

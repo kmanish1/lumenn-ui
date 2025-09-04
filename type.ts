@@ -1591,6 +1591,7 @@ export type Elara = {
       docs: [
         "Update an existing order, change the making and taking amount",
         "change the expiry time",
+        "NOTE: no need a new instruction for wsol as this is signed by the payer itself",
       ];
       discriminator: [54, 8, 208, 207, 34, 134, 239, 168];
       accounts: [
@@ -2027,10 +2028,6 @@ export type Elara = {
             };
           },
           {
-            name: "slippageBps";
-            type: "u16";
-          },
-          {
             name: "feeBps";
             type: "u16";
           },
@@ -2289,10 +2286,6 @@ export type Elara = {
             type: "i64";
           },
           {
-            name: "slippageBps";
-            type: "u16";
-          },
-          {
             name: "feeBps";
             type: "u16";
           },
@@ -2331,10 +2324,6 @@ export type Elara = {
           {
             name: "outAmount";
             type: "u64";
-          },
-          {
-            name: "slippageBps";
-            type: "u16";
           },
           {
             name: "feeBps";
@@ -2435,10 +2424,6 @@ export type Elara = {
             type: {
               option: "i64";
             };
-          },
-          {
-            name: "slippageBps";
-            type: "u16";
           },
         ];
       };
@@ -2561,10 +2546,6 @@ export type Elara = {
             type: "u64";
           },
           {
-            name: "slippageBps";
-            type: "u16";
-          },
-          {
             name: "expiredAt";
             type: "i64";
           },
@@ -2611,10 +2592,6 @@ export type Elara = {
           {
             name: "takingAmount";
             type: "u64";
-          },
-          {
-            name: "slippageBps";
-            type: "u16";
           },
           {
             name: "expiredAt";
