@@ -200,11 +200,10 @@ export default function OrdersCard() {
       <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
         <CardHeader className="border-b border-slate-700/50 pb-4">
           <CardTitle className="text-xl font-semibold text-slate-200">
-            Your Orders
+            Open Orders
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-          <h3 className="text-lg font-medium text-slate-300">Open Orders</h3>
           {orders.length === 0 ? (
             <div className="text-center py-8 text-slate-500 italic">
               No open orders

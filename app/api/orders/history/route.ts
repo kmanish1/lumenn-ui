@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { rpc } from "@/lib/rpc";
 
 export type History = {
-  type: "init" | "fill" | "partial fill" | "cancel" | "expire";
+  type: "init" | "fill" | "partial fill" | "cancel" | "expire" | "update";
   signature: string;
   input_mint: string;
   output_mint: string;
@@ -118,6 +118,20 @@ export async function GET(req: Request) {
           });
           continue;
         }
+
+        const update = decodeUpdateOrder(data);
+        if (update) {
+          events.push({
+            type: "update",
+            signature: signatures[i],
+            input_mint: update.input_mint.toBase58(),
+            output_mint: update.output_mint.toBase58(),
+            making_amount: update.making_amount.toString(),
+            taking_amount: update.taking_amount.toString(),
+            timestamp,
+          });
+          continue;
+        }
       }
     }
 
@@ -139,6 +153,9 @@ const ORDER_INITIALIZED_DISCRIMINATOR = Buffer.from([
 ]);
 const ORDER_CANCELLED_DISCRIMINATOR = Buffer.from([
   108, 56, 128, 68, 168, 113, 168, 239,
+]);
+const UPDATE_ORDER_DISCRIMINATOR = Buffer.from([
+  74, 87, 9, 53, 182, 80, 78, 75,
 ]);
 const FILL_EVENT_DISCRIMINATOR = Buffer.from([
   13, 89, 41, 228, 105, 178, 45, 112,
@@ -162,11 +179,15 @@ function decodeOrderInitialized(base64Data: string) {
   offset += 32;
   const output_mint = new PublicKey(buf.subarray(offset, offset + 32));
   offset += 32;
-  offset += 1; // input_mint_decimals
-  offset += 1; // output_mint_decimals
+  const input_mint_decimals = buf.readUInt8(offset);
+  offset += 1;
+  const output_mint_decimals = buf.readUInt8(offset);
+  offset += 1;
   const making_amount = buf.readBigUInt64LE(offset);
   offset += 8;
   const taking_amount = buf.readBigUInt64LE(offset);
+  offset += 8;
+  const expired_at = buf.readBigInt64LE(offset);
 
   return {
     escrow_address,
@@ -174,8 +195,11 @@ function decodeOrderInitialized(base64Data: string) {
     unique_id,
     input_mint,
     output_mint,
+    input_mint_decimals,
+    output_mint_decimals,
     making_amount,
     taking_amount,
+    expired_at,
   };
 }
 
@@ -194,10 +218,10 @@ function decodeOrderCancelled(base64Data: string) {
   offset += 32;
   const output_mint = new PublicKey(buf.subarray(offset, offset + 32));
   offset += 32;
-  // const making_amount = buf.readBigUInt64LE(offset);
-  // offset += 8;
-  // const taking_amount = buf.readBigUInt64LE(offset);
-  // offset += 8; // NOTE: Change this later
+  const making_amount = buf.readBigUInt64LE(offset);
+  offset += 8;
+  const taking_amount = buf.readBigUInt64LE(offset);
+  offset += 8;
   const is_expired = buf.readUInt8(offset) === 1;
   offset += 1;
   const cancelled_by = new PublicKey(buf.subarray(offset, offset + 32));
@@ -210,11 +234,50 @@ function decodeOrderCancelled(base64Data: string) {
     unique_id,
     input_mint,
     output_mint,
-    making_amount: "100",
-    taking_amount: "100",
+    making_amount,
+    taking_amount,
     is_expired,
     cancelled_by,
     timestamp,
+  };
+}
+
+function decodeUpdateOrder(base64Data: string) {
+  const buf = Buffer.from(base64Data, "base64");
+  if (!buf.subarray(0, 8).equals(UPDATE_ORDER_DISCRIMINATOR)) return null;
+
+  let offset = 8;
+  const escrow_address = new PublicKey(buf.subarray(offset, offset + 32));
+  offset += 32;
+  const maker = new PublicKey(buf.subarray(offset, offset + 32));
+  offset += 32;
+  const unique_id = buf.readBigUInt64LE(offset);
+  offset += 8;
+  const input_mint = new PublicKey(buf.subarray(offset, offset + 32));
+  offset += 32;
+  const output_mint = new PublicKey(buf.subarray(offset, offset + 32));
+  offset += 32;
+  const input_mint_decimals = buf.readUInt8(offset);
+  offset += 1;
+  const output_mint_decimals = buf.readUInt8(offset);
+  offset += 1;
+  const making_amount = buf.readBigUInt64LE(offset);
+  offset += 8;
+  const taking_amount = buf.readBigUInt64LE(offset);
+  offset += 8;
+  const expired_at = buf.readBigInt64LE(offset);
+
+  return {
+    escrow_address,
+    maker,
+    unique_id,
+    input_mint,
+    output_mint,
+    input_mint_decimals,
+    output_mint_decimals,
+    making_amount,
+    taking_amount,
+    expired_at,
   };
 }
 
@@ -237,7 +300,8 @@ function decodeFillEvent(base64Data: string) {
   offset += 8;
   const out_amount = buf.readBigUInt64LE(offset);
   offset += 8;
-  offset += 2; // fee_bps
+  const fee_bps = buf.readUInt16LE(offset);
+  offset += 2;
   const fill_type = buf.readUInt8(offset) === 0 ? "Full" : "Partial";
 
   return {
@@ -248,6 +312,7 @@ function decodeFillEvent(base64Data: string) {
     unique_id,
     in_amount,
     out_amount,
+    fee_bps,
     fill_type,
   };
 }

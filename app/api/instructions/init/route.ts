@@ -103,7 +103,6 @@ export async function GET(req: Request) {
     );
 
     const maker_input_ata = await getAssociatedTokenAddress(inputMint, maker);
-    console.log(new BN(inputAmount));
 
     const instruction = await anchor_idl.methods
       .initializeOrder(

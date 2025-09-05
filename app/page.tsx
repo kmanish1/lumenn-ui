@@ -21,10 +21,12 @@ import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { fetch_quote, get_current_rate } from "@/lib/jup";
 import { TokenSearchBox } from "@/components/token-search";
 import OrdersCard, { Token } from "@/components/orders-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getOpenOrders } from "@/lib/orders";
 import HistoryCard from "@/components/history-card";
 import { History } from "./api/orders/history/route";
 import { useOrdersStore } from "@/store/useOrderStore";
+import { EXPIRY_OFFSETS, options } from "@/lib/data";
 
 export default function App() {
   const { connected, publicKey, sendTransaction, connecting, disconnecting } =
@@ -212,29 +214,13 @@ export default function App() {
   const [mode, setMode] = useState<string>("never");
 
   const handleExpiryChange = (value: string) => {
-    const now = Math.floor(Date.now() / 1000);
     setMode(value);
+    const now = Math.floor(Date.now() / 1000);
 
-    switch (value) {
-      case "never":
-        setExpiry(0);
-        break;
-      case "1h":
-        setExpiry(now + 3600);
-        break;
-      case "6h":
-        setExpiry(now + 6 * 3600);
-        break;
-      case "24h":
-        setExpiry(now + 24 * 3600);
-        break;
-      case "7d":
-        setExpiry(now + 7 * 24 * 3600);
-        break;
-      case "custom":
-        // wait for user to pick a date
-        setExpiry(0);
-        break;
+    if (value === "custom") {
+      setExpiry(0); // Wait for user input
+    } else {
+      setExpiry(EXPIRY_OFFSETS[value] ? now + EXPIRY_OFFSETS[value] : 0);
     }
   };
 
@@ -348,12 +334,15 @@ export default function App() {
                     <SelectValue placeholder="Select expiry" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 text-white border border-slate-700 shadow-md rounded-md">
-                    <SelectItem value="never">Never</SelectItem>
-                    <SelectItem value="1h">1 Hour</SelectItem>
-                    <SelectItem value="6h">6 Hours</SelectItem>
-                    <SelectItem value="24h">24 Hours</SelectItem>
-                    <SelectItem value="7d">7 Days</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                    {options.map(({ value, label }) => (
+                      <SelectItem
+                        key={value}
+                        value={value}
+                        className="cursor-pointer"
+                      >
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {mode === "custom" && (
@@ -374,8 +363,22 @@ export default function App() {
             </Button>
           </CardContent>
         </Card>
-        <OrdersCard />
-        <HistoryCard events={history} />
+        <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
+          <TabsList>
+            <TabsTrigger value="open" className="cursor-pointer">
+              Open Orders
+            </TabsTrigger>
+            <TabsTrigger value="history" className="cursor-pointer">
+              History
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="open">
+            <OrdersCard />
+          </TabsContent>
+          <TabsContent value="history">
+            <HistoryCard events={history} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
