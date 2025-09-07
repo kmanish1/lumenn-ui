@@ -325,7 +325,7 @@ export default function OrdersCard() {
   );
 }
 
-const formatDate = (bn: BN) => {
+export const formatDate = (bn: BN) => {
   return new Date(bn.toNumber() * 1000).toLocaleString("en-US", {
     year: "numeric",
     month: "short",

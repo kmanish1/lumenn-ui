@@ -8,6 +8,7 @@ import BN from "bn.js";
 import { toast } from "sonner";
 import { rpc } from "@/lib/rpc";
 import { History } from "@/app/api/orders/history/route";
+import { formatDate } from "./orders-card";
 
 type Token = {
   id: string;
@@ -170,18 +171,13 @@ export default function HistoryCard({ events }: { events: History[] }) {
 
                     {/* Timestamp */}
                     <div className="text-xs text-slate-500">
-                      {new Date(e.timestamp * 1000).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDate(new BN(e.timestamp).div(new BN(1000)))}
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <span>
-                        Sig: {e.signature.slice(0, 6)}...{e.signature.slice(-6)}
+                        Signature: {e.signature.slice(0, 6)}...
+                        {e.signature.slice(-6)}
                       </span>
                       <button
                         onClick={() =>
@@ -190,7 +186,7 @@ export default function HistoryCard({ events }: { events: History[] }) {
                             "_blank",
                           )
                         }
-                        className="px-2 py-0.5 text-[11px] rounded-md bg-slate-700/70 text-slate-300 hover:bg-slate-600 hover:text-white transition"
+                        className="px-2 py-0.5 text-[11px] rounded-md bg-slate-700/70 text-slate-300 hover:bg-slate-600 hover:text-white transition cursor-pointer"
                       >
                         View
                       </button>
