@@ -84,7 +84,7 @@ export async function GET(req: Request) {
 
     if (!compressed_account) {
       return NextResponse.json({
-        error: "Escrow account not found",
+        error: "Order account not found",
       });
     }
 

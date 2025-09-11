@@ -29,8 +29,14 @@ import { useOrdersStore } from "@/store/useOrderStore";
 import { EXPIRY_OFFSETS, options } from "@/lib/data";
 
 export default function App() {
-  const { connected, publicKey, sendTransaction, connecting, disconnecting } =
-    useWallet();
+  const {
+    connected,
+    publicKey,
+    sendTransaction,
+    connecting,
+    disconnecting,
+    connect,
+  } = useWallet();
 
   useEffect(() => {
     if (connected && !disconnecting) {
@@ -355,12 +361,18 @@ export default function App() {
                 )}
               </div>
             </div>
-            <Button
-              onClick={handleSubmitOrder}
-              className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg cursor-pointer"
-            >
-              {connected ? "Place Limit Order" : "Connect Wallet to Trade"}
-            </Button>
+            {connected ? (
+              <Button
+                onClick={handleSubmitOrder}
+                className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg cursor-pointer"
+              >
+                Place Limit Order
+              </Button>
+            ) : (
+              <div className="flex justify-center">
+                <WalletMultiButton>Connect Wallet to Trade</WalletMultiButton>
+              </div>
+            )}
           </CardContent>
         </Card>
         <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
