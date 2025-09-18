@@ -171,7 +171,7 @@ export function TokenSearchBox({
       }}
     >
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1 bg-slate-700 text-white rounded hover:bg-slate-600 cursor-pointer transition-colors">
+        <button className="flex items-center gap-2 px-3 py-1 bg-zinc-800/80 text-white rounded hover:bg-[#3f2380] cursor-pointer transition-colors">
           {selectedToken ? (
             <>
               <img
@@ -190,7 +190,7 @@ export function TokenSearchBox({
           )}
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-md bg-slate-900 text-white border-slate-700">
+      <DialogContent className="max-w-md bg-zinc-900 text-white border border-[#512DA8]">
         <DialogHeader>
           <DialogTitle className="text-white">Select a token</DialogTitle>
         </DialogHeader>
@@ -198,7 +198,7 @@ export function TokenSearchBox({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search any token..."
-          className="w-full px-3 py-2 mb-4 bg-slate-800 rounded border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 mb-4 bg-zinc-800 rounded border border-[#512DA8] text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#512DA8]"
           autoFocus
         />
         <div className="max-h-72 overflow-y-auto space-y-1">
@@ -213,7 +213,7 @@ export function TokenSearchBox({
                 <div
                   key={token.id}
                   onClick={() => handleTokenSelect(token)}
-                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-slate-700 rounded transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#3f2380] rounded transition-colors"
                 >
                   <img
                     src={token.icon}
@@ -226,10 +226,10 @@ export function TokenSearchBox({
                   />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{token.symbol}</span>
-                    <span className="text-xs text-slate-400">{token.name}</span>
+                    <span className="text-xs text-zinc-400">{token.name}</span>
                   </div>
                   {user && (
-                    <div className="ml-auto text-sm text-slate-300">
+                    <div className="ml-auto text-sm text-zinc-300">
                       {balance.toFixed(4)}
                     </div>
                   )}
@@ -237,7 +237,7 @@ export function TokenSearchBox({
               );
             })
           ) : (
-            <div className="text-center text-slate-400 py-8">
+            <div className="text-center text-zinc-400 py-8">
               No tokens found
             </div>
           )}

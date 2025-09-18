@@ -95,7 +95,7 @@ export default function HistoryCard({ events }: { events: History[] }) {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-slate-900/80 border border-slate-700/60 rounded-3xl shadow-xl backdrop-blur-md transition-all">
+    <Card className="w-full max-w-4xl mx-auto  border border-slate-700/60 rounded-3xl shadow-xl backdrop-blur-md transition-all">
       <CardHeader className="border-b border-slate-700/50 pb-5 px-6 flex items-center justify-between">
         <CardTitle className="text-2xl font-semibold text-slate-100 tracking-wide">
           History

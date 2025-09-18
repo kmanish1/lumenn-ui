@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TrendingUp, ArrowUpDown } from "lucide-react";
+import { TrendingUp, ArrowUpDown, Menu, X } from "lucide-react";
 import { connection, sol, usdc } from "@/lib/rpc";
 import { Order } from "@/lib/utils";
 import BN from "bn.js";
@@ -29,19 +29,15 @@ import { useOrdersStore } from "@/store/useOrderStore";
 import { EXPIRY_OFFSETS, options } from "@/lib/data";
 
 export default function App() {
-  const {
-    connected,
-    publicKey,
-    sendTransaction,
-    connecting,
-    disconnecting,
-    connect,
-  } = useWallet();
+  const { connected, publicKey, sendTransaction, connecting, disconnecting } =
+    useWallet();
 
   useEffect(() => {
     if (connected && !disconnecting) {
       toast.success("Wallet connected", {
-        description: `Connected to ${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}`,
+        description: `Connected to ${publicKey
+          ?.toString()
+          .slice(0, 4)}...${publicKey?.toString().slice(-4)}`,
       });
     }
   }, [connecting, disconnecting, connected, publicKey]);
@@ -64,7 +60,7 @@ export default function App() {
     async function fetchHistory() {
       if (connected) {
         const res = await fetch(
-          `/api/orders/history?maker=${publicKey?.toString()}`,
+          `/api/orders/history?maker=${publicKey?.toString()}`
         );
         const data = await res.json();
         setHistory(data.history ?? []);
@@ -77,28 +73,34 @@ export default function App() {
   const [inputToken, setInputToken] = useState<Token>(sol);
   const [outputToken, setOutputToken] = useState<Token>(usdc);
 
-  const [inputAmount, setInputAmount] = useState(1.0);
-  const [outputAmount, setOutputAmount] = useState(0.0);
+  const [inputAmount, setInputAmount] = useState<string>("1");
+  const [outputAmount, setOutputAmount] = useState<string>("");
+  const [targetRate, setTargetRate] = useState<string>("");
 
   useEffect(() => {
-    async function fetchOutputAmount() {
-      const data = await fetch_quote(
+    const numInput = parseFloat(inputAmount || "0");
+    if (!isNaN(numInput)) {
+      fetch_quote(
         inputToken,
         outputToken,
-        inputAmount * 10 ** inputToken.decimals,
-      );
-      setOutputAmount(
-        data!.outAmount ? data!.outAmount / 10 ** outputToken.decimals : 0,
-      );
-      setTargetRate(data?.current_ratio);
+        numInput * 10 ** inputToken.decimals
+      ).then((data) => {
+        setOutputAmount(
+          data?.outAmount
+            ? String(data.outAmount / 10 ** outputToken.decimals)
+            : "0"
+        );
+        setTargetRate(data?.current_ratio?.toString() ?? "");
+      });
     }
-    fetchOutputAmount();
   }, [inputAmount, inputToken, outputToken]);
 
-  const [targetRate, setTargetRate] = useState<number>();
-
   useEffect(() => {
-    setOutputAmount(inputAmount * (targetRate || 0));
+    const numInput = parseFloat(inputAmount || "0");
+    const numRate = parseFloat(targetRate || "0");
+    if (!isNaN(numInput) && !isNaN(numRate)) {
+      setOutputAmount(String(numInput * numRate));
+    }
   }, [targetRate]);
 
   const handleSubmitOrder = async () => {
@@ -114,7 +116,7 @@ export default function App() {
     const current_rate = await get_current_rate(inputToken, outputToken);
 
     if (current_rate) {
-      if (targetRate! < current_rate) {
+      if (parseFloat(targetRate!) < current_rate) {
         toast.error("Target rate must be greater than current rate");
         return;
       }
@@ -131,10 +133,14 @@ export default function App() {
         `/api/instructions/init` +
           `?maker=${publicKey.toString()}` +
           `&input_mint=${inputToken.id}` +
-          `&input_amount=${inputAmount * 10 ** inputToken.decimals}` +
+          `&input_amount=${
+            parseFloat(inputAmount) * 10 ** inputToken.decimals
+          }` +
           `&output_mint=${outputToken.id}` +
-          `&output_amount=${outputAmount * 10 ** outputToken.decimals}` +
-          `&expired_at=${expiry}`,
+          `&output_amount=${
+            parseFloat(outputAmount) * 10 ** outputToken.decimals
+          }` +
+          `&expired_at=${expiry}`
       );
 
       const { tx, unique_id, order } = await res.json();
@@ -155,7 +161,7 @@ export default function App() {
           onClick: () =>
             window.open(
               `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-              "_blank",
+              "_blank"
             ),
         },
       });
@@ -165,7 +171,7 @@ export default function App() {
           signature: signature,
           ...(await connection.getLatestBlockhash()),
         },
-        "confirmed",
+        "confirmed"
       );
 
       toast.success("Transaction confirmed ✅", {
@@ -176,10 +182,13 @@ export default function App() {
           onClick: () =>
             window.open(
               `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-              "_blank",
+              "_blank"
             ),
         },
       });
+
+      const inAmount = parseFloat(inputAmount);
+      const outAmount = parseFloat(outputAmount);
 
       const new_order: Order = {
         maker: publicKey,
@@ -192,10 +201,10 @@ export default function App() {
           outputTokenProgram: new PublicKey(outputToken.tokenProgram),
         },
         amount: {
-          oriMakingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
-          takingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
-          oriTakingAmount: new BN(outputAmount * 10 ** outputToken.decimals),
-          makingAmount: new BN(inputAmount * 10 ** inputToken.decimals),
+          oriMakingAmount: new BN(inAmount * 10 ** inputToken.decimals),
+          makingAmount: new BN(inAmount * 10 ** inputToken.decimals),
+          oriTakingAmount: new BN(outAmount * 10 ** outputToken.decimals),
+          takingAmount: new BN(outAmount * 10 ** outputToken.decimals),
         },
         expiredAt: new BN(expiry),
         createdAt: new BN(Date.now() / 1000),
@@ -218,6 +227,11 @@ export default function App() {
   const [expiry, setExpiry] = useState<number>(0);
   const [customDate, setCustomDate] = useState<string>("");
   const [mode, setMode] = useState<string>("never");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"Limit Order" | "Swap" | "DCA">(
+    "Limit Order"
+  );
+
 
   const handleExpiryChange = (value: string) => {
     setMode(value);
@@ -238,149 +252,456 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background cyber-grid">
-      <header className="border-b border-border cyber-border">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-8 w-8 text-primary cyber-glow" />
-            <h1 className="text-2xl font-bold text-foreground">CyberDEX</h1>
+      <header className="bg-black text-white shadow-md">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Left: Logo + Brand */}
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-8 w-8 text-[#512DA8] transition-transform duration-300 hover:scale-110" />
+            <h1 className="text-2xl font-bold tracking-wide text-white">
+              Lumenn
+            </h1>
           </div>
 
-          <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
-            <WalletMultiButton>
-              {connected ? null : (
-                <div className="transition-all duration-300 rounded-xl px-4 py-2 text-sm sm:text-base">
-                  Connect Wallet
-                </div>
-              )}
+          {/* Center: Navbar (desktop only) */}
+          <nav className="hidden md:flex gap-8 text-lg font-medium text-gray-300">
+            {["Limit Order", "Swap", "DCA"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() =>
+                  setActiveTab(tab as "Limit Order" | "Swap" | "DCA")
+                }
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 ${
+                  activeTab === tab
+                    ? "text-white font-semibold bg-[#512DA8]/30 shadow-md"
+                    : "hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <span className="absolute left-0 bottom-0 w-full h-1 rounded-full bg-[#512DA8] animate-slideIn" />
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Right: Balance + Wallet */}
+          <div className="flex items-center gap-4">
+            <WalletMultiButton className="!bg-[#512DA8] hover:!bg-[#6830c4] !text-white font-medium rounded-full px-5 py-2 shadow-lg transition-all duration-300">
+              {connected ? null : "Connect Wallet"}
             </WalletMultiButton>
+
+            {/* Hamburger (mobile only) */}
+            <button
+              className="md:hidden text-gray-300 hover:text-white transition-all duration-300"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-black border-t border-gray-800 flex flex-col gap-2 px-6 py-4 text-gray-300 shadow-inner animate-fadeIn">
+            {["Limit Order", "Swap", "DCA"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab as "Limit Order" | "Swap" | "DCA");
+                  setMenuOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-300 ${
+                  activeTab === tab
+                    ? "text-white font-semibold bg-[#512DA8]/30 shadow-inner"
+                    : "hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="container mx-auto px-4 py-8 flex flex-col items-center gap-8">
-        <Card className="cyber-border cyber-glow bg-slate-900/50 w-full max-w-lg">
-          <CardHeader>
-            <CardTitle className="text-center">Limit Orders</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="bg-slate-800/30 rounded-lg p-4">
-              <Label className="text-slate-300">Selling</Label>
-              <div className="flex items-center justify-between mt-2">
-                <TokenSearchBox
-                  selectedToken={inputToken}
-                  setSelectedToken={setInputToken}
-                  user={connected ? publicKey! : undefined}
-                />
-                <input
-                  inputMode="decimal"
-                  value={inputAmount}
-                  onChange={(e) => setInputAmount(Number(e.target.value))}
-                  className="bg-transparent border-b border-slate-500 text-right text-white w-24"
-                  placeholder="Amount"
-                />
-              </div>
-            </div>
+        {activeTab === "Limit Order" && (
+          // <Card className="cyber-border cyber-glow bg-slate-900/50 w-full max-w-lg">
+          //   <CardHeader>
+          //     <CardTitle className="text-center">Limit Orders</CardTitle>
+          //   </CardHeader>
+          //   <CardContent className="p-6 space-y-6">
+          //     <div className="bg-slate-800/30 rounded-lg p-4">
+          //       <Label className="text-slate-300">Selling</Label>
+          //       <div className="flex items-center justify-between mt-2">
+          //         <TokenSearchBox
+          //           selectedToken={inputToken}
+          //           setSelectedToken={setInputToken}
+          //           user={connected ? publicKey! : undefined}
+          //         />
+          //         <input
+          //           inputMode="decimal"
+          //           value={inputAmount}
+          //           onChange={(e) => {
+          //             const val = e.target.value;
+          //             if (/^\d*\.?\d*$/.test(val)) {
+          //               setInputAmount(val);
+          //             }
+          //           }}
+          //           className="bg-transparent border-b border-slate-500 text-right text-white w-24"
+          //           placeholder="0.00"
+          //         />
+          //       </div>
+          //     </div>
 
-            <div className="flex justify-center my-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const tempToken = inputToken;
-                  setInputToken(outputToken);
-                  setOutputToken(tempToken);
+          //     <div className="flex justify-center my-3">
+          //       <button
+          //         type="button"
+          //         onClick={() => {
+          //           const tempToken = inputToken;
+          //           setInputToken(outputToken);
+          //           setOutputToken(tempToken);
 
-                  // swap amounts too
-                  const tempAmount = inputAmount;
-                  setInputAmount(outputAmount);
-                  setOutputAmount(tempAmount);
-                }}
-                className="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition cursor-pointer"
-              >
-                <ArrowUpDown className="h-5 w-5 text-white" />
-              </button>
-            </div>
+          //           // swap amounts too
+          //           const tempAmount = inputAmount;
+          //           setInputAmount(outputAmount);
+          //           setOutputAmount(tempAmount);
+          //         }}
+          //         className="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition cursor-pointer"
+          //       >
+          //         <ArrowUpDown className="h-5 w-5 text-white" />
+          //       </button>
+          //     </div>
 
-            <div className="bg-slate-800/30 rounded-lg p-4">
-              <Label className="text-slate-300 ">Buying</Label>
-              <div className="flex items-center justify-between mt-2">
-                <TokenSearchBox
-                  selectedToken={outputToken}
-                  setSelectedToken={setOutputToken}
-                />
-                <input
-                  inputMode="decimal"
-                  value={outputAmount}
-                  onChange={(e) => setOutputAmount(Number(e.target.value))}
-                  className="bg-transparent border-b border-slate-500 text-right text-white w-24"
-                  placeholder="Amount"
-                />
-              </div>
-            </div>
+          //     <div className="bg-slate-800/30 rounded-lg p-4">
+          //       <Label className="text-slate-300 ">Buying</Label>
+          //       <div className="flex items-center justify-between mt-2">
+          //         <TokenSearchBox
+          //           selectedToken={outputToken}
+          //           setSelectedToken={setOutputToken}
+          //         />
+          //         <input
+          //           inputMode="decimal"
+          //           value={outputAmount}
+          //           onChange={(e) => {
+          //             const val = e.target.value;
+          //             if (/^\d*\.?\d*$/.test(val)) {
+          //               setOutputAmount(val);
+          //             }
+          //           }}
+          //           className="bg-transparent border-b border-slate-500 text-right text-white w-24"
+          //           placeholder="Amount"
+          //         />
+          //       </div>
+          //     </div>
 
-            <div className="flex items-center justify-between bg-slate-800/30 rounded-lg p-4">
-              <div>
-                <Label className="text-slate-300 text-sm">Target Rate</Label>
-                <div className="flex items-center gap-2 mt-1">
+          //     <div className="flex items-center justify-between bg-slate-800/30 rounded-lg p-4">
+          //       <div>
+          //         <Label className="text-slate-300 text-sm">Target Rate</Label>
+          //         <div className="flex items-center gap-2 mt-1">
+          //           <input
+          //             inputMode="decimal"
+          //             value={targetRate}
+          //             onChange={(e) => {
+          //               const val = e.target.value;
+          //               if (/^\d*\.?\d*$/.test(val)) {
+          //                 setTargetRate(val);
+          //               }
+          //             }}
+          //             className="bg-transparent border-b border-slate-500 text-white w-28 text-sm"
+          //             placeholder="e.g. 196.42"
+          //           />
+          //           <span className="text-slate-400 text-sm">
+          //             {outputToken.name}
+          //           </span>
+          //         </div>
+          //       </div>
+          //       <div className="flex flex-col gap-2">
+          //         <Label className="text-slate-300 text-sm">Expiry</Label>
+          //         <Select value={mode} onValueChange={handleExpiryChange}>
+          //           <SelectTrigger className="border-b border-slate-500 bg-transparent text-white px-0 py-1 h-auto w-32 text-sm focus:outline-none">
+          //             <SelectValue placeholder="Select expiry" />
+          //           </SelectTrigger>
+          //           <SelectContent className="bg-slate-800 text-white border border-slate-700 shadow-md rounded-md">
+          //             {options.map(({ value, label }) => (
+          //               <SelectItem
+          //                 key={value}
+          //                 value={value}
+          //                 className="cursor-pointer"
+          //               >
+          //                 {label}
+          //               </SelectItem>
+          //             ))}
+          //           </SelectContent>
+          //         </Select>
+          //         {mode === "custom" && (
+          //           <input
+          //             type="datetime-local"
+          //             value={customDate}
+          //             onChange={handleCustomDateChange}
+          //             className="bg-transparent border-b border-slate-500 text-white text-sm focus:outline-none"
+          //           />
+          //         )}
+          //       </div>
+          //     </div>
+          //     {connected ? (
+          //       <Button
+          //         onClick={handleSubmitOrder}
+          //         className="w-full h-12 bg-green-500 hover:bg-green-600 text-white font-semibold text-lg rounded-lg cursor-pointer"
+          //       >
+          //         Place Limit Order
+          //       </Button>
+          //     ) : (
+          //       <div className="flex justify-center">
+          //         <WalletMultiButton>Connect Wallet to Trade</WalletMultiButton>
+          //       </div>
+          //     )}
+          //   </CardContent>
+
+          // </Card>
+
+          <Card className="bg-black border border-zinc-800 w-full max-w-lg rounded-2xl  shadow-md">
+            <CardHeader>
+              <CardTitle className="text-center text-white text-lg font-semibold">
+                Limit Orders
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="p-6 space-y-6">
+              {/* Selling Box */}
+              <div className="bg-black rounded-xl p-6 border border-zinc-800 shadow-md">
+                <Label className="text-gray-300">Sell</Label>
+                <div className="flex items-center justify-between gap-3 mt-3">
+                  <TokenSearchBox
+                    selectedToken={inputToken}
+                    setSelectedToken={setInputToken}
+                    user={connected ? publicKey! : undefined}
+                  />
                   <input
                     inputMode="decimal"
-                    value={targetRate}
-                    onChange={(e) => setTargetRate(Number(e.target.value))}
-                    className="bg-transparent border-b border-slate-500 text-white w-28 text-sm"
-                    placeholder="e.g. 196.42"
+                    value={inputAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setInputAmount(val);
+                      }
+                    }}
+                    className="w-28 text-right text-sm rounded-lg px-3 py-2 bg-zinc-900/70 text-white border border-zinc-800 focus:border-[#512DA8] focus:ring-2 focus:ring-[#512DA8]/60 outline-none transition-all placeholder-gray-500"
+                    placeholder="0.00"
                   />
-                  <span className="text-slate-400 text-sm">
-                    {outputToken.name}
-                  </span>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label className="text-slate-300 text-sm">Expiry</Label>
-                <Select value={mode} onValueChange={handleExpiryChange}>
-                  <SelectTrigger className="border-b border-slate-500 bg-transparent text-white px-0 py-1 h-auto w-32 text-sm focus:outline-none">
-                    <SelectValue placeholder="Select expiry" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 text-white border border-slate-700 shadow-md rounded-md">
-                    {options.map(({ value, label }) => (
-                      <SelectItem
-                        key={value}
-                        value={value}
-                        className="cursor-pointer"
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {mode === "custom" && (
-                  <input
-                    type="datetime-local"
-                    value={customDate}
-                    onChange={handleCustomDateChange}
-                    className="bg-transparent border-b border-slate-500 text-white text-sm focus:outline-none"
+
+              {/* Swap Button */}
+              <div className="flex justify-center my-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tempToken = inputToken;
+                    setInputToken(outputToken);
+                    setOutputToken(tempToken);
+
+                    const tempAmount = inputAmount;
+                    setInputAmount(outputAmount);
+                    setOutputAmount(tempAmount);
+                  }}
+                  className="p-3 rounded-full bg-[#512DA8] hover:bg-[#6A3EDB] transition-colors cursor-pointer shadow-md border border-[#512DA8]/60"
+                >
+                  <ArrowUpDown className="h-5 w-5 text-white" />
+                </button>
+              </div>
+
+              {/* Buying Box */}
+              <div className="bg-black rounded-xl p-6 border border-zinc-800 shadow-md">
+                <Label className="text-gray-300">Buy</Label>
+                <div className="flex items-center justify-between gap-3 mt-3">
+                  <TokenSearchBox
+                    selectedToken={outputToken}
+                    setSelectedToken={setOutputToken}
                   />
-                )}
+                  <input
+                    inputMode="decimal"
+                    value={outputAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setOutputAmount(val);
+                      }
+                    }}
+                    className="w-28 text-right text-sm rounded-lg px-3 py-2 bg-zinc-900/70 text-white border border-zinc-800/50 focus:border-[#512DA8] focus:ring-2 focus:ring-[#512DA8]/60 outline-none transition-all placeholder-gray-500"
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
-            </div>
-            {connected ? (
-              <Button
-                onClick={handleSubmitOrder}
-                className="w-full h-12 bg-green-500 hover:bg-green-600 text-black font-semibold text-lg rounded-lg cursor-pointer"
-              >
-                Place Limit Order
-              </Button>
-            ) : (
-              <div className="flex justify-center">
-                <WalletMultiButton>Connect Wallet to Trade</WalletMultiButton>
+
+              {/* <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <Label className="text-zinc-400">Buy</Label>
+                <div className="flex items-center justify-between mt-2">
+                  <TokenSearchBox
+                    selectedToken={outputToken}
+                    setSelectedToken={setOutputToken}
+                  />
+                  <input
+                    inputMode="decimal"
+                    value={outputAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setOutputAmount(val);
+                      }
+                    }}
+                    className="bg-transparent border-b border-zinc-700 text-right text-white w-24 focus:outline-none"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div> */}
+
+              {/* Target Rate + Expiry */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-black rounded-xl p-6 border border-zinc-800 shadow-md">
+                {/* Target Rate */}
+                <div className="w-full sm:w-auto">
+                  <Label className="text-gray-300 text-sm">Target Rate</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <input
+                      inputMode="decimal"
+                      value={targetRate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setTargetRate(val);
+                        }
+                      }}
+                      className="w-32 text-sm rounded-lg px-3 py-2 bg-zinc-900/70 text-white border border-zinc-800/50 focus:border-[#512DA8] focus:ring-2 focus:ring-[#512DA8]/60 outline-none transition-all placeholder-gray-500"
+                      placeholder="e.g. 196.42"
+                    />
+                    <span className="text-gray-400 text-sm">
+                      {outputToken.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Expiry */}
+                <div className="w-full sm:w-auto flex flex-col gap-2">
+                  <Label className="text-gray-300 text-sm">Expiry</Label>
+                  <Select value={mode} onValueChange={handleExpiryChange}>
+                    <SelectTrigger className="w-40 text-sm rounded-lg px-3 py-2 bg-zinc-800/50 text-white border  focus:border-[#512DA8] focus:ring-1 focus:ring-[#512DA8]/60 outline-none transition-all">
+                      <SelectValue placeholder="Select expiry" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 text-white border border-zinc-800 shadow-lg rounded-md">
+                      {options.map(({ value, label }) => (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="cursor-pointer hover:bg-[#512DA8]/30 transition-colors"
+                        >
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {mode === "custom" && (
+                    <input
+                      type="datetime-local"
+                      value={customDate}
+                      onChange={handleCustomDateChange}
+                      className="mt-1 w-44 text-sm rounded-lg px-3 py-2 bg-zinc-900/70 text-white border border-[#512DA8]/50 focus:border-[#512DA8] focus:ring-2 focus:ring-[#512DA8]/60 outline-none transition-all"
+                    />
+                  )}
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {/* <div className="flex items-center justify-between bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                <div>
+                  <Label className="text-zinc-400 text-sm">Target Rate</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      inputMode="decimal"
+                      value={targetRate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setTargetRate(val);
+                        }
+                      }}
+                      className="bg-transparent border-b border-zinc-700 text-white w-28 text-sm focus:outline-none"
+                      placeholder="e.g. 196.42"
+                    />
+                    <span className="text-zinc-500 text-sm">
+                      {outputToken.name}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-zinc-400 text-sm">Expiry</Label>
+                  <Select value={mode} onValueChange={handleExpiryChange}>
+                    <SelectTrigger className="border-b border-zinc-700 bg-transparent text-white px-0 py-1 h-auto w-32 text-sm focus:outline-none">
+                      <SelectValue placeholder="Select expiry" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 text-white border border-zinc-700 shadow-md rounded-md">
+                      {options.map(({ value, label }) => (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="cursor-pointer"
+                        >
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {mode === "custom" && (
+                    <input
+                      type="datetime-local"
+                      value={customDate}
+                      onChange={handleCustomDateChange}
+                      className="bg-transparent border-b border-zinc-700 text-white text-sm focus:outline-none"
+                    />
+                  )}
+                </div>
+              </div> */}
+
+              {/* Submit */}
+              {connected ? (
+                <Button
+                  onClick={handleSubmitOrder}
+                  className="w-full h-12 bg-[#512DA8] hover:text-gray-300 text-white font-semibold text-lg rounded-full cursor-pointer transition"
+                >
+                  Place Limit Order
+                </Button>
+              ) : (
+                <div className="flex justify-center">
+                  <WalletMultiButton className="!bg-[#512DA8] hover:!bg-blue-500 text-white font-semibold rounded-full px-6 py-3">
+                    Connect Wallet
+                  </WalletMultiButton>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        {activeTab === "Swap" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">Swap</CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {activeTab === "DCA" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">DCA</CardTitle>
+            </CardHeader>
+          </Card>
+        )}
         <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
-          <TabsList>
-            <TabsTrigger value="open" className="cursor-pointer">
+          <TabsList className="">
+            <TabsTrigger value="open" className="cursor-pointer mr-3">
               Open Orders
             </TabsTrigger>
-            <TabsTrigger value="history" className="cursor-pointer">
+            <TabsTrigger value="history" className="cursor-pointer ml-3">
               History
             </TabsTrigger>
           </TabsList>

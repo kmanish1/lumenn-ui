@@ -197,7 +197,7 @@ export default function OrdersCard() {
 
   return (
     <>
-      <Card className="w-full max-w-3xl bg-slate-900/70 border border-slate-700/50 rounded-2xl shadow-lg">
+      <Card className="w-full max-w-3xl border border-slate-700/50 rounded-2xl shadow-lg">
         <CardHeader className="border-b border-slate-700/50 pb-4">
           <CardTitle className="text-xl font-semibold text-slate-200">
             Open Orders
@@ -262,14 +262,14 @@ export default function OrdersCard() {
                           : formatDate(order.expiredAt)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => openEdit(order)}
                         className="text-blue-400 hover:text-blue-500 hover:bg-blue-500/10 cursor-pointer"
                       >
-                        ✏️Update
+                        Update
                       </Button>
                       <Button
                         variant="ghost"
@@ -277,8 +277,7 @@ export default function OrdersCard() {
                         onClick={() => cancelOrder(order.address, order.maker)}
                         className="flex flex-col items-center justify-center gap-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
                       >
-                        <X className="h-4 w-4" />
-                        <span className="text-xs font-medium">Cancel</span>
+                        <span className=" font-medium">Cancel</span>
                       </Button>
                     </div>
                   </div>
